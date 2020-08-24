@@ -32,9 +32,9 @@ struct Detr
     /**
      * Resize the image without lossing the aspect ratio, and ensure the dimentions
      * won't over shoot due to higher or lower aspect ratio.
-     * 
+     *
      * max_size should be greater than the size.
-     * 
+     *
      *  width / height == newW / newH
      **/
     std::vector<uint> getNewSize(uint width, uint height, uint size, uint max_size)
@@ -64,8 +64,8 @@ struct Detr
         }
         else if (width > height)
         {
-            newW = size;
-            newH = (uint)(size / aspect_ratio);
+            newW = (uint)(size * aspect_ratio);
+            newH = (uint)size;
         }
         else
         {

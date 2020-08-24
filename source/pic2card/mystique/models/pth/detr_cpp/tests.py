@@ -39,11 +39,11 @@ class TestDetrLib(unittest.TestCase):
         model = detr.Detr(self.model_path)
         self.assertEqual(
             model.get_new_size(400, 300, 800, 1333),
-            [800, 600])
+            [1066, 800])
 
         self.assertEqual(
             model.get_new_size(800, 300, 800, 1333),
-            [500, 187])
+            [1333, 500])
 
         self.assertEqual(
             model.get_new_size(300, 500, 800, 1333),
@@ -52,3 +52,7 @@ class TestDetrLib(unittest.TestCase):
         self.assertEqual(
             model.get_new_size(1500, 1500, 800, 1333),
             [800, 800])
+
+        self.assertEqual(
+            model.get_new_size(543, 393, 800, 1333),
+            [1105, 800])
