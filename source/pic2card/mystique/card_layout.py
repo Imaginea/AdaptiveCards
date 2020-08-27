@@ -1,3 +1,4 @@
+import sys
 import os
 from typing import List
 
@@ -22,11 +23,11 @@ def print_layout(layout_array):
             for col in cols:
                 lout_row += "col {"
                 lout_row += print_layout(col)
-                lout_row += "}\n"
+                lout_row += "}"
         else:
             print("not supported.")
 
-        lout_row += "} \n\n"
+        lout_row += "}"
         layouts.append(lout_row)
 
     return "".join(layouts)
@@ -35,15 +36,15 @@ def print_layout(layout_array):
 def print_layout_list(layout_array):
     layouts = []
     for row in layout_array:
-        lout_row = ["row {"]
+        lout_row = ["row", "{"]
 
         if isinstance(row, tuple):
             lout_row.append(f" item({row[0]})")
         elif isinstance(row, dict):
             cols = row["columns"]
             for col in cols:
-                lout_row.append("col {")
-                lout_row.append(print_layout_list(col))
+                lout_row.extend(["col", "{"])
+                lout_row.extend(print_layout_list(col))
                 lout_row.append("}")
         else:
             print("not supported.")
@@ -85,7 +86,7 @@ def min_ylen_iou(box1, box2) -> float:
     box = iou_bbox(box1, box2)
     y_len = box[3] - box[1]
     min_box_y = min([box1[3] - box1[1], box2[3] - box2[1]])
-    print(y_len, min_box_y)
+    # print(y_len, min_box_y)
     return float(y_len / min_box_y)
 
 
@@ -114,23 +115,25 @@ def min_area_iou(box1, box2, threshold=0.9):
         return box_area >= threshold * min_box_area
 
 
-def check_same_row(box1, box2, min_y_iou=0.15):
+def check_same_row(box1, box2, min_y_iou=0.3):
     """
     Check box1 and box2 are in same row.
     if there are slight intersection, still treat it as different row.
 
-    @param min_y_iou
+    @param min_y_iou: The line iou ratio is higher than the threshold then
+                      treat them as same row or not.
     """
     x1, y1, x2, y2 = box1
     xx1, yy1, xx2, yy2 = box2
 
     # check any intersection chances.
-    y_itrsection = min_ylen_iou(box1, box2)
+    y_intrsect = min_ylen_iou(box1, box2)
+    if y_intrsect == 0:
+        # no intersection so, this check is skipped.
+        y_intrsect = sys.maxsize
     x_aligned = min([y2, yy2]) > max([y1, yy1])
 
-    print("===> ", y_itrsection)
-
-    return x_aligned and y_itrsection > min_y_iou
+    return x_aligned and y_intrsect > min_y_iou
 
 
 def check_same_col(box1, box2):
@@ -179,6 +182,8 @@ def collect_rows(bbox_list):
 
 
 def parse_row(row):
+    # print("Row size: ", len(row))
+
     if len(row) == 1:
         return row[0]
     else:
