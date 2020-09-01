@@ -8,7 +8,7 @@ from mystique.card_layout import collect_rows, print_layout, print_layout_list
 
 class TestCardLayout(unittest.TestCase):
     def setUp(self):
-        with open("od_result_100.json") as f:
+        with open("od_result_16.json") as f:
             od_result = {k: np.array(v)
                          for k, v in json.loads(f.read()).items()}
         box_df = pd.DataFrame(

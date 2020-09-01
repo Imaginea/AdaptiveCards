@@ -104,9 +104,9 @@ def plot_results(pil_img: Image,
 
         ax.add_patch(plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin,
                                    fill=False, color=c, linewidth=1))
-        text = f'{label_map[cl_id]}: {score:0.2f}'
-        ax.text(xmin, ymin, text, fontsize=8,
-                bbox=dict(facecolor='yellow', alpha=0.5))
+        #text = f'{label_map[cl_id]}: {score:0.2f}'
+        #ax.text(xmin, ymin, text, fontsize=8,
+        #        bbox=dict(facecolor='yellow', alpha=0.5))
 
     img_buf = io.BytesIO()
     plt.savefig(img_buf, format="png", bbox_inches='tight', pad_inches=0)

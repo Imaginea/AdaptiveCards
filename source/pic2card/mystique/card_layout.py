@@ -77,6 +77,27 @@ def iou_bbox(box1, box2):
     return box
 
 
+def filter_similar_bboxes(bboxs):
+    """
+    Filter out bboxes if they are intersecting more than 90% with other bboxes.
+    """
+    bboxs_filtered = []
+    indi = 0
+    while indi < len(bboxs):
+        indj = indi + 1
+        while indj < len(bboxs):
+            box1 = bboxs[indi][1]
+            box2 = bboxs[indj][1]
+            if min_area_iou(box1, box2):
+                # Remove the max one.
+                box1_area = bbox_area(**box1)
+                box2_area = bbox_area(**box2)
+                if box2_area > box1_area:
+                    bboxs_filtered.append(bboxs[indi])
+                else:
+                    bboxs_filtered.append(bboxs[indj])
+
+
 def min_ylen_iou(box1, box2) -> float:
     """
     Get the fraction of y-cord intersects, calculated against the min y-cord
@@ -98,7 +119,6 @@ def min_xlen_iou(box1: List[float], box2: List[float]) -> float:
     box = iou_bbox(box1, box2)
     x_len = box[2] - box[0]
     min_box_x = min([box1[2] - box1[0], box2[2] - box2[0]])
-
     return float(x_len / min_box_x)
 
 
@@ -131,16 +151,21 @@ def check_same_row(box1, box2, min_y_iou=0.3):
     if y_intrsect == 0:
         # no intersection so, this check is skipped.
         y_intrsect = sys.maxsize
-    x_aligned = min([y2, yy2]) > max([y1, yy1])
+    y_aligned = min([y2, yy2]) > max([y1, yy1])
 
-    return x_aligned and y_intrsect > min_y_iou
+    return y_aligned and y_intrsect > min_y_iou
 
 
-def check_same_col(box1, box2):
+def check_same_col(box1, box2, min_x_iou=0.3):
     "Two boxes are aligned x-axis or not"
     x1, y1, x2, y2 = box1
     xx1, yy1, xx2, yy2 = box2
-    return min([x2, xx2]) > max([x1, xx1])
+
+    x_intrsect = min_xlen_iou(box1, box2)
+    if x_intrsect == 0:
+        x_intrsect = sys.maxsize
+    x_aligned = min([x2, xx2]) > max([x1, xx1])
+    return x_aligned and x_intrsect > min_x_iou
 
 
 def merge_box_coords(box1, box2):

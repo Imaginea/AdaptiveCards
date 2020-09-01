@@ -107,6 +107,11 @@ class PredictCard:
         output_dict = self.od_model.get_objects(
             image_np=image_np, image=image
         )
+
+        with open("od_result.json", "w") as f:
+            _t = {k: v.tolist() for k, v in output_dict.items()}
+            f.write(json.dumps(_t))
+
         return self.generate_card(output_dict, image, image_np, card_format)
 
     def tf_serving_main(self, bs64_img: str, tf_server: str, model_name: str,
