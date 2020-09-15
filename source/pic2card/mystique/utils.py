@@ -1,7 +1,7 @@
 import time
 import io
 import re
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 import glob
 import xml.etree.ElementTree as Et
 from contextlib import contextmanager
@@ -74,6 +74,34 @@ def id_to_label(label_id: int) -> Optional[str]:
     return config.ID_TO_LABEL.get(label_id)
 
 
+def plot_bboxes(pil_img: Image, boxes: List[List[float]]) -> io.BytesIO:
+    """
+    Generic bounding box plotting, inspired from detr implementation.
+
+    Returns binary representation of the image with bounding box drawn, Use
+    `Image.open` to render the image.
+    """
+    plt.figure(figsize=(10, 20))
+    plt.imshow(pil_img)
+    plt.margins(0, 0)
+    plt.axis('off')
+    ax = plt.gca()
+
+    for ind, value in enumerate(zip(boxes, COLORS * 100)):
+        (xmin, ymin, xmax, ymax), c = value
+        ax.add_patch(plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin,
+                                   fill=False, color=c, linewidth=1))
+        text = f'{ind}'
+        ax.text(xmin, ymin, text, fontsize=8,
+                bbox=dict(facecolor='yellow', alpha=0.5))
+
+    img_buf = io.BytesIO()
+    plt.savefig(img_buf, format="png", bbox_inches='tight', pad_inches=0)
+    img_buf.seek(0)
+    plt.close()
+    return img_buf
+
+
 def plot_results(pil_img: Image,
                  classes: np.array,
                  scores: np.array,
@@ -87,6 +115,7 @@ def plot_results(pil_img: Image,
     `Image.open` to render the image.
     """
     label_map = label_map or config.ID_TO_LABEL
+    plt.figure(figsize=(10, 20))
     plt.imshow(pil_img)
     plt.margins(0, 0)
     plt.axis('off')
@@ -103,10 +132,10 @@ def plot_results(pil_img: Image,
                                                          COLORS * 100):
 
         ax.add_patch(plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin,
-                                   fill=False, color=c, linewidth=1))
-        #text = f'{label_map[cl_id]}: {score:0.2f}'
-        #ax.text(xmin, ymin, text, fontsize=8,
-        #        bbox=dict(facecolor='yellow', alpha=0.5))
+                                   fill=False, color=c, linewidth=2))
+        text = f'{label_map[cl_id]}: {score:0.2f}'
+        ax.text(xmin, ymin, text, fontsize=10,
+                bbox=dict(facecolor='yellow', alpha=0.5))
 
     img_buf = io.BytesIO()
     plt.savefig(img_buf, format="png", bbox_inches='tight', pad_inches=0)

@@ -1,6 +1,7 @@
 import sys
 import os
-from typing import List
+import numpy as np
+from typing import List, Tuple
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
@@ -77,25 +78,31 @@ def iou_bbox(box1, box2):
     return box
 
 
-def filter_similar_bboxes(bboxs):
+def filter_similar_bboxes(bboxes: np.array):
     """
     Filter out bboxes if they are intersecting more than 90% with other bboxes.
+
+    Create a mask and return filtered items.
+
+    bboxes format -> [(class, [x1, y1, x2, y2]), ...]
     """
     bboxs_filtered = []
-    indi = 0
-    while indi < len(bboxs):
-        indj = indi + 1
-        while indj < len(bboxs):
-            box1 = bboxs[indi][1]
-            box2 = bboxs[indj][1]
-            if min_area_iou(box1, box2):
-                # Remove the max one.
-                box1_area = bbox_area(**box1)
-                box2_area = bbox_area(**box2)
-                if box2_area > box1_area:
-                    bboxs_filtered.append(bboxs[indi])
+    removed = []
+
+    while bboxes:
+        box1 = bboxes.pop(0)
+        for ind, box2 in enumerate(bboxes):
+            flag, rmbox1 = min_area_iou(box1[1], box2[1])
+            if flag:
+                if rmbox1:
+                    # Remove the box1 and keep box2 in place of box1
+                    removed.append((box2[0], box1[0]))
+                    box1 = box2
                 else:
-                    bboxs_filtered.append(bboxs[indj])
+                    removed.append((box1[0], box2[0]))
+                _ = bboxes.pop(ind)
+        bboxs_filtered.append(box1)
+    return bboxs_filtered, removed
 
 
 def min_ylen_iou(box1, box2) -> float:
@@ -122,17 +129,30 @@ def min_xlen_iou(box1: List[float], box2: List[float]) -> float:
     return float(x_len / min_box_x)
 
 
-def min_area_iou(box1, box2, threshold=0.9):
+def min_area_iou(box1, box2, threshold=0.9) -> Tuple[bool, bool]:
     """check box1 and box2 intersecting and its area is
         not greater than the 90% of min area of box1 and box2.
+
+        @return (bool, bool)
+            1. Telling the box has more than 0.9 intersection
+            2. Second flag tells which box can be removed,
+                True => 1'st box, False => 2'nd box. This flag isn't used if
+                the first one is False.
     """
     box = iou_bbox(box1, box2)
     box_area = bbox_area(*box)
     if box_area == 0:
-        return False
+        return False, False
     else:
-        min_box_area = min([bbox_area(*box1), bbox_area(*box2)])
-        return box_area >= threshold * min_box_area
+        box1_area = bbox_area(*box1)
+        box2_area = bbox_area(*box2)
+        min_box = box1_area
+        min_flag = True
+        if box1_area > box2_area:
+            min_box = box2_area
+            min_flag = False
+
+        return box_area >= threshold * min_box, min_flag
 
 
 def check_same_row(box1, box2, min_y_iou=0.3):
@@ -231,7 +251,7 @@ def parse_row(row):
                 continue
             elif check_same_col(col_coord, box):
                 # Mark the column has multiple row or not.
-                if min_area_iou(box, col_coord):
+                if min_area_iou(box, col_coord)[0]:
                     has_nested_col = True
                     print("nesting.")
 
