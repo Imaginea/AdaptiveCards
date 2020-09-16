@@ -1,42 +1,19 @@
 import sys
 import os
 import numpy as np
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 
-class CardLayout:
-    pass
-
-
-# card_layout.copy?
-def print_layout(layout_array):
+def get_card_layout_repr(card_layout: List) -> List[str]:
+    """
+    From card layout to string representation of the card layout, helpful
+    for easy testing and representation.
+    """
     layouts = []
-    for row in layout_array:
-        lout_row = "row {"
-
-        if isinstance(row, tuple):
-            lout_row += f" item({row[0]})"
-        elif isinstance(row, dict):
-            cols = row["columns"]
-            for col in cols:
-                lout_row += "col {"
-                lout_row += print_layout(col)
-                lout_row += "}"
-        else:
-            print("not supported.")
-
-        lout_row += "}"
-        layouts.append(lout_row)
-
-    return "".join(layouts)
-
-
-def print_layout_list_flat(layout_array):
-    layouts = []
-    for row in layout_array:
+    for row in card_layout:
         layouts.extend(["row", "{"])
 
         if isinstance(row, tuple):
@@ -45,13 +22,11 @@ def print_layout_list_flat(layout_array):
             cols = row["columns"]
             for col in cols:
                 layouts.extend(["col", "{"])
-                layouts.extend(print_layout_list_flat(col))
+                layouts.extend(get_card_layout_repr(col))
                 layouts.append("}")
         else:
             print("not supported.")
-
         layouts.append("}")
-        # layouts.append(lout_row)
 
     return layouts
 
@@ -67,28 +42,6 @@ def pretty_print_layout(card_layout, step=2, space_char=" "):
         else:
             pretty_card += space_char * space + item + "\n"
     return pretty_card
-
-
-def print_layout_list(layout_array):
-    layouts = []
-    for row in layout_array:
-        lout_row = ["row", "{"]
-
-        if isinstance(row, tuple):
-            lout_row.append(f" item({row[0]})")
-        elif isinstance(row, dict):
-            cols = row["columns"]
-            for col in cols:
-                lout_row.extend(["col", "{"])
-                lout_row.extend(print_layout_list(col))
-                lout_row.append("}")
-        else:
-            print("not supported.")
-
-        lout_row.append("}")
-        layouts.append(lout_row)
-
-    return layouts
 
 
 def bbox_area(x1, y1, x2, y2):

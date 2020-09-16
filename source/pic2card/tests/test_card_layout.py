@@ -2,9 +2,10 @@ import unittest
 import json
 import pandas as pd
 import numpy as np
-from pprint import pprint
-from mystique.card_layout import (collect_rows, print_layout,
-                                  print_layout_list_flat, pretty_print_layout, filter_similar_bboxes)
+from mystique.card_layout import (collect_rows,
+                                  filter_similar_bboxes,
+                                  get_card_layout_repr,
+                                  pretty_print_layout)
 
 
 class TestCardLayout(unittest.TestCase):
@@ -27,5 +28,4 @@ class TestCardLayout(unittest.TestCase):
         boxes, removed = filter_similar_bboxes(self.bbox_list)
         card_layout = collect_rows(boxes)
         # import IPython; IPython.embed()
-        card = print_layout_list_flat(card_layout)
-        print(pretty_print_layout(card))
+        print(pretty_print_layout(get_card_layout_repr(card_layout)))
