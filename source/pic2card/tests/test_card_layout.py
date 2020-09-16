@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from pprint import pprint
 from mystique.card_layout import (collect_rows, print_layout,
-                                  print_layout_list, filter_similar_bboxes)
+                                  print_layout_list_flat, pretty_print_layout, filter_similar_bboxes)
 
 
 class TestCardLayout(unittest.TestCase):
@@ -26,5 +26,6 @@ class TestCardLayout(unittest.TestCase):
     def test_collect_rows(self):
         boxes, removed = filter_similar_bboxes(self.bbox_list)
         card_layout = collect_rows(boxes)
-        pprint(print_layout_list(card_layout))
         # import IPython; IPython.embed()
+        card = print_layout_list_flat(card_layout)
+        print(pretty_print_layout(card))

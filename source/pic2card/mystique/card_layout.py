@@ -34,6 +34,41 @@ def print_layout(layout_array):
     return "".join(layouts)
 
 
+def print_layout_list_flat(layout_array):
+    layouts = []
+    for row in layout_array:
+        layouts.extend(["row", "{"])
+
+        if isinstance(row, tuple):
+            layouts.append(f"item({row[0]})")
+        elif isinstance(row, dict):
+            cols = row["columns"]
+            for col in cols:
+                layouts.extend(["col", "{"])
+                layouts.extend(print_layout_list_flat(col))
+                layouts.append("}")
+        else:
+            print("not supported.")
+
+        layouts.append("}")
+        # layouts.append(lout_row)
+
+    return layouts
+
+
+def pretty_print_layout(card_layout, step=2, space_char=" "):
+    pretty_card = ""
+    space = 0
+    for item in card_layout:
+        if item == "{":
+            space += step
+        elif item == "}":
+            space -= step
+        else:
+            pretty_card += space_char * space + item + "\n"
+    return pretty_card
+
+
 def print_layout_list(layout_array):
     layouts = []
     for row in layout_array:
@@ -97,6 +132,7 @@ def filter_similar_bboxes(bboxes: np.array):
                 if rmbox1:
                     # Remove the box1 and keep box2 in place of box1
                     removed.append((box2[0], box1[0]))
+                    # removed.append(box1)
                     box1 = box2
                 else:
                     removed.append((box1[0], box2[0]))
