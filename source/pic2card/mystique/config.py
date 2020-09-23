@@ -51,7 +51,15 @@ PROPERTY_EXTRACTOR_FUNC = {
     "checkbox": "mystique.extract_properties.CollectProperties.checkbox",
     "radiobutton": "mystique.extract_properties.CollectProperties.radiobutton",
     "image": "mystique.extract_properties.CollectProperties.image",
-    "actionset": "mystique.extract_properties.CollectProperties.actionset"
+    "actionset": "mystique.extract_properties.CollectProperties.actionset",
+    # the design properties
+    "data": "mystique.extract_properties.CollectProperties.get_text",
+    "weight": "mystique.extract_properties.CollectProperties.get_weight",
+    "horizontal_alignment":
+    "mystique.extract_properties.CollectProperties.get_alignment",
+    "size": "mystique.extract_properties.CollectProperties.get_size",
+    "color": "mystique.extract_properties.CollectProperties.get_colors",
+    "style": "mystique.extract_properties.CollectProperties.get_actionset_type"
 }
 
 # image detection swtiching paramater

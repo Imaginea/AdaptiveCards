@@ -11,6 +11,7 @@ import cv2
 from PIL import Image
 from pytesseract import pytesseract, Output
 
+from mystique.utils import get_property_method
 from mystique import config, default_host_configs
 from mystique.extract_properties_abstract import (AbstractFontWeight,
                                                   AbstractFontSize,
@@ -72,23 +73,24 @@ class BaseExtractProperties(AbstractBaseExtractProperties):
             output_type=Output.DICT)
         text_list = ' '.join(img_data['text']).split()
         extracted_text = ' '.join(text_list)
-        # saving pytesseract img_data for get_size property
-        self.image_data = img_data
 
-        return extracted_text
+        return extracted_text, img_data
 
     def checkbox(self, image: Image, coords: Tuple) -> Dict:
         """
         Returns the checkbox properties of the extracted design object
         @return: property object
         """
+        get_alignment = get_property_method(self, "horizontal_alignment")
+        get_data = get_property_method(self, "data")
+
         return {
-            "horizontal_alignment": self.get_alignment(
+            "horizontal_alignment": get_alignment(
                 image=image,
                 xmin=coords[0],
                 xmax=coords[2]
             ),
-            "data": self.get_text(image, coords),
+            "data": get_data(image, coords),
         }
 
     def radiobutton(self, image: Image, coords: Tuple) -> Dict:
@@ -315,16 +317,24 @@ class GetTextBoxProperty(BaseExtractProperties, GetFontSize, GetFontWeight):
         Returns the textbox properties of the extracted design object
         @return: property object
         """
+        get_alignment = get_property_method(self, "horizontal_alignment")
+        get_data = get_property_method(self, "data")
+        get_size = get_property_method(self, "size")
+        get_weight = get_property_method(self, "weight")
+        get_color = get_property_method(self, "color")
+        # getting the pytesseract api image_to_data result and the text
+        data, image_data = get_data(image, coords)
+
         return {
-            "horizontal_alignment": self.get_alignment(
+            "horizontal_alignment": get_alignment(
                 image=image,
                 xmin=coords[0],
                 xmax=coords[2]
             ),
-            "data": self.get_text(image, coords),
-            "size": self.get_size(image, coords, img_data=self.image_data),
-            "weight": self.get_weight(image, coords),
-            "color": self.get_colors(image, coords)
+            "data": data,
+            "size": get_size(image, coords, img_data=image_data),
+            "weight": get_weight(image, coords),
+            "color": get_color(image, coords)
 
         }
 
@@ -454,14 +464,18 @@ class GetActionSetProperty(BaseExtractProperties):
         Returns the actionset properties of the extracted design object
         @return: property object
         """
+        get_alignment = get_property_method(self, "horizontal_alignment")
+        get_data = get_property_method(self, "data")
+        get_actionset_type = get_property_method(self, "style")
+
         return {
-            "horizontal_alignment": self.get_alignment(
+            "horizontal_alignment": get_alignment(
                 image=image,
                 xmin=coords[0],
                 xmax=coords[2]
             ),
-            "data": self.get_text(image, coords),
-            "style": self.get_actionset_type(image, coords)
+            "data": get_data(image, coords),
+            "style": get_actionset_type(image, coords)
         }
 
 
