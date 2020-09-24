@@ -208,8 +208,7 @@ class TextBoxProperty(BaseExtractProperties, FontColor):
         """
         data, image_data = self.get_text(image, coords)
         # loading the active font property extractor class
-        font_spec = load_instance_with_class_path(
-            config.FONT_SPEC_REGISTRY[config.ACTIVE_FONTSPEC_NAME])
+        font_spec = load_instance_with_class_path(config.ACTIVE_FONTSPEC_NAME)
         return {
             "horizontal_alignment": self.get_alignment(
                 image=image,

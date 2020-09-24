@@ -3,15 +3,15 @@ Module for extracting the font features like size and weight
 can switch for different implementation to obtain font properties
 """
 
-import cv2
-import numpy as np
 from typing import Tuple, Dict
+import numpy as np
+import cv2
 from PIL import Image
 from mystique import default_host_configs
 from mystique.extract_properties_abstract import AbstractFontSizeAndWeight
 
 
-class FontPropUsingContours(AbstractFontSizeAndWeight):
+class FontPropBoundingBox(AbstractFontSizeAndWeight):
     """
     Class handles extraction of font size and weight using contours
     from pytesseract image to data api
@@ -29,23 +29,25 @@ class FontPropUsingContours(AbstractFontSizeAndWeight):
         @param img_data : input image data from pytesseract
         @return: size
         """
-        image_width, image_height = image.size
+        _, image_height = image.size
         box_height = []
         box_width = []
         n_boxes = len(img_data['level'])
         for i in range(n_boxes):
             if len(img_data['text'][i]) > 1:  # to ignore img with wrong bbox
-                (_, _, w, h) = (img_data['left'][i], img_data['top'][i],
-                                img_data['width'][i], img_data['height'][i])
+                (_, _, char_w, char_h) = (img_data['left'][i],
+                                          img_data['top'][i],
+                                          img_data['width'][i],
+                                          img_data['height'][i])
                 # h = text_size_processing(img_data['text'][i], h)
 
-                box_height.append(h)
-                box_width.append(w)
+                box_height.append(char_h)
+                box_width.append(char_w)
         # passing box_width for the get_weight method
         self.box_width = box_width
         font_size = default_host_configs.FONT_SIZE
         # Handling of unrecognized characters
-        if len(box_height) == 0:
+        if not box_height:
             heights_ratio = font_size['default']
         else:
             heights = int(np.mean(box_height))
@@ -78,18 +80,17 @@ class FontPropUsingContours(AbstractFontSizeAndWeight):
         @param img_data : input image data from pytesseract
         @return: weight
         """
-        image_width, image_height = image.size
+        image_width, _ = image.size
         # using the box width list that has each character width of input text
         box_width = self.box_width
-        font_weight = default_host_configs.FONT_WEIGHT_CONTOUR
+        font_weight = default_host_configs.FONT_WEIGHT_BBOX
         # Handling of unrecognized characters
-        if len(box_width) == 0:
+        if not box_width:
             weights_ratio = font_weight['default']
         else:
             weights = int(np.mean(box_width))
             weights_ratio = round((weights/image_width), 4)
 
-        # TODO: Fine tune weights threshold
         if font_weight['lighter'] > weights_ratio:
             weight = "Lighter"
         elif font_weight['bolder'] < weights_ratio:
@@ -100,7 +101,7 @@ class FontPropUsingContours(AbstractFontSizeAndWeight):
         return weight
 
 
-class FontPropUsingMorph(FontPropUsingContours):
+class FontPropMorph(FontPropBoundingBox):
     """
     Class handles extraction of font weight property
     using morphology operations.
@@ -118,7 +119,6 @@ class FontPropUsingMorph(FontPropUsingContours):
         @return: weight
         """
         cropped_image = image.crop(coords)
-        image_width, image_height = image.size
         c_img = np.asarray(cropped_image)
         """
         if(image_height/image_width) < 1:
@@ -135,8 +135,8 @@ class FontPropUsingMorph(FontPropUsingContours):
         kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3))
         # Loop until erosion leads to thinning text in image to singular pixel
         while True:
-            open = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
-            temp = cv2.subtract(img, open)
+            morph_open = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
+            temp = cv2.subtract(img, morph_open)
             eroded = cv2.erode(img, kernel)
             skel = cv2.bitwise_or(skel, temp)
             img = eroded.copy()

@@ -56,11 +56,11 @@ PROPERTY_EXTRACTOR_FUNC = {
 
 # Font size and weight property class registry
 FONT_SPEC_REGISTRY = {
-    "font_morph": "mystique.font_properties.FontPropUsingMorph",
-    "font_contours": "mystique.font_properties.FontPropUsingContours"
+    "font_morph": "mystique.font_properties.FontPropMorph",
+    "font_contours": "mystique.font_properties.FontPropBoundingBox"
 }
 # active font prop pipelne
-ACTIVE_FONTSPEC_NAME = os.environ.get("ACTIVE_FONTSPEC_NAME", "font_morph")
+ACTIVE_FONTSPEC_NAME = FONT_SPEC_REGISTRY['font_morph']
 
 # image detection swtiching paramater
 # On True [ uses custom image pipeline for image objects]

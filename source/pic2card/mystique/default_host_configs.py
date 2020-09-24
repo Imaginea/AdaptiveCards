@@ -13,14 +13,14 @@ FONT_SIZE = {
     "extralarge": 0.05463
 }
 
+FONT_WEIGHT_BBOX = {
+    "lighter": 0.0143,
+    "default": 0.0176,
+    "bolder": 0.0213
+}
+
 FONT_WEIGHT_MORPH = {
     "lighter": 2.35,
     "default": 2.75,
     "bolder": 3.25
-}
-
-FONT_WEIGHT_CONTOUR = {
-    "lighter": 0.0143,
-    "default": 0.0176,
-    "bolder": 0.0213
 }
