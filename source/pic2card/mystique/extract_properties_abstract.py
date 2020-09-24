@@ -21,7 +21,7 @@ class AbstractBaseExtractProperties(metaclass=abc.ABCMeta):
         pass
 
 
-class AbstractFontSize(metaclass=abc.ABCMeta):
+class AbstractFontSizeAndWeight(metaclass=abc.ABCMeta):
     """
     Abstract class for extracting the font size property.
     """
@@ -29,13 +29,20 @@ class AbstractFontSize(metaclass=abc.ABCMeta):
     def get_size(self, image: Image, coords: Tuple, img_data: Dict):
         pass
 
-
-class AbstractFontWeight(metaclass=abc.ABCMeta):
     """
     Abstract class for extracting the font weight property.
     """
     @abc.abstractmethod
     def get_weight(self, image: Image, coords: Tuple):
+        pass
+
+
+class AbstractFontColor(metaclass=abc.ABCMeta):
+    """
+    Abstract class for extracting the font color property.
+    """
+    @abc.abstractmethod
+    def get_colors(self, image: Image, coords: Tuple):
         pass
 
 
@@ -46,11 +53,10 @@ class AbstractChoiceExtraction(AbstractBaseExtractProperties):
     pass
 
 
-class AbstractTextExtraction(AbstractBaseExtractProperties, AbstractFontSize,
-                             AbstractFontWeight):
+class AbstractTextExtraction(AbstractBaseExtractProperties,
+                             AbstractFontSizeAndWeight,
+                             AbstractFontColor):
     """
     Abstract class for extracting all properties related to text extraction.
     """
-    @abc.abstractmethod
-    def get_colors(self, image: Image, coords: Tuple):
-        pass
+    pass

@@ -51,16 +51,16 @@ PROPERTY_EXTRACTOR_FUNC = {
     "checkbox": "mystique.extract_properties.CollectProperties.checkbox",
     "radiobutton": "mystique.extract_properties.CollectProperties.radiobutton",
     "image": "mystique.extract_properties.CollectProperties.image",
-    "actionset": "mystique.extract_properties.CollectProperties.actionset",
-    # the design properties
-    "data": "mystique.extract_properties.CollectProperties.get_text",
-    "weight": "mystique.extract_properties.CollectProperties.get_weight",
-    "horizontal_alignment":
-    "mystique.extract_properties.CollectProperties.get_alignment",
-    "size": "mystique.extract_properties.CollectProperties.get_size",
-    "color": "mystique.extract_properties.CollectProperties.get_colors",
-    "style": "mystique.extract_properties.CollectProperties.get_actionset_type"
+    "actionset": "mystique.extract_properties.CollectProperties.actionset"
 }
+
+# Font size and weight property class registry
+FONT_SPEC_REGISTRY = {
+    "font_morph": "mystique.font_properties.FontPropUsingMorph",
+    "font_contours": "mystique.font_properties.FontPropUsingContours"
+}
+# active font prop pipelne
+ACTIVE_FONTSPEC_NAME = os.environ.get("ACTIVE_FONTSPEC_NAME", "font_morph")
 
 # image detection swtiching paramater
 # On True [ uses custom image pipeline for image objects]

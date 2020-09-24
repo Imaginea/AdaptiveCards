@@ -127,13 +127,13 @@ def load_od_instance():
     return od_obj
 
 
-def get_property_method(prop_instance, design_object_name):
+def get_property_method(prop_instance, design_object_name: str):
     """
     Loads the respective method for design object from class_path
     providing plug in functionality.
     @param prop_instance: input Collect properties instance
     @param design_object_name: input name of the design object
-    @return: prop_method
+    @return: property_method
     """
     class_path = config.PROPERTY_EXTRACTOR_FUNC[design_object_name]
     p_split = class_path.split(".")
@@ -149,7 +149,20 @@ def get_property_method(prop_instance, design_object_name):
         return property_method
 
 
-def text_size_processing(text, height):
+def load_instance_with_class_path(class_path: str):
+    """
+    Loads an instance of the class using the class path
+    @param class_path: input path of the class instantiated
+    @return: class_obj instance
+    """
+    p_split = class_path.split(".")
+    module_path, class_name = ".".join(p_split[:-1]), p_split[-1]
+    module = import_module(module_path)
+    class_obj = getattr(module, class_name)()
+    return class_obj
+
+
+def text_size_processing(text: str, height: int):
     """
     Reduces the extra pixels to normalize the height of text boxes
     @param text: input extraced text from pytesseract
