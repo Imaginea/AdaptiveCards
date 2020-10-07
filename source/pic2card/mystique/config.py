@@ -111,3 +111,6 @@ COLUMNSET_GROUPING = {
         "ymax-ymin_difference": 3,
         "xmax-xmin_difference": 100
 }
+
+# FLAG SWITCH FOR NEW LAYOUT STRUCTURING BY DEFAULT - FALSE
+NEW_LAYOUT_STRUCTURE = True

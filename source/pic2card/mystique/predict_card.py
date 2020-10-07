@@ -11,6 +11,9 @@ import cv2
 from PIL import Image
 import numpy as np
 import requests
+import uuid
+from multiprocessing import Process, Queue
+from pprint import pprint
 
 from mystique import config
 from mystique.utils import get_property_method
@@ -18,6 +21,8 @@ from mystique.arrange_card import CardArrange
 from mystique.image_extraction import ImageExtraction
 from mystique.card_template import DataBinding
 from mystique.extract_properties import CollectProperties
+from mystique.export_to_card import ExportToTargetPlatform
+from mystique.generate_datastrucure import GenerateLayoutDataStructure
 
 
 class PredictCard:
@@ -62,6 +67,8 @@ class PredictCard:
                     object_json["ymax"] = ymax
                     object_json["coords"] = (xmin, ymin, xmax, ymax)
                     object_json["score"] = scores[i]
+                    object_json['uuid'] = str(uuid.uuid4())
+                    object_json["class"] = classes[i]
 
                     if object_json["object"] == "textbox":
                         detected_coords.append(
@@ -75,7 +82,7 @@ class PredictCard:
         return json_object, detected_coords
 
     def get_object_properties(self, design_objects: List[Dict],
-                              pil_image: Image) -> None:
+                              pil_image: Image, queue=None) -> None:
         """
         Extract each design object's properties.
         @param design_objects: List of design objects collected from the model.
@@ -90,6 +97,8 @@ class PredictCard:
             property_element = property_object(pil_image,
                                                design_object.get("coords"))
             design_object.update(property_element)
+        if queue:
+            queue.put(design_objects)
 
     def main(self, image=None, card_format=None):
         """
@@ -139,6 +148,46 @@ class PredictCard:
                                   image, image_np, card_format)
         return card
 
+    def layout_generation(self, json_objects, queue):
+        final_ds = []
+        generate_data_structure = GenerateLayoutDataStructure()
+        generate_data_structure.column_set_container_grouping(
+                json_objects, final_ds)
+        final_ds = generate_data_structure.other_containers_grouping(final_ds)
+
+        if queue:
+            queue.put(final_ds)
+        return final_ds
+
+    def export_to_card(self, layout_data_structure, properites, pil_image):
+
+        export_card = ExportToTargetPlatform()
+        export_card.merge_properties(properites, layout_data_structure)
+        collect_properties = CollectProperties(pil_image)
+        property_object = getattr(collect_properties, "container")
+        layout_data_structure = property_object(layout_data_structure)
+        card_json = export_card.build_adaptive_card(layout_data_structure)
+        # debug_string = export_card.build_testing_format(layout_data_structure)
+        # print("".join(debug_string))
+        return card_json["body"]
+
+    def new_layout_generation(self, json_objects, image):
+        queue1 = Queue()
+        queue2 = Queue()
+        p1 = Process(target=self.get_object_properties, args=(
+                     json_objects["objects"], image, queue1,))
+        p2 = Process(target=self.layout_generation,
+                     args=(json_objects["objects"], queue2,))
+        p1.start()
+        p2.start()
+
+        properties = queue1.get()
+        layout_structure = queue2.get()
+
+        p1.join()
+        p2.join()
+        return self.export_to_card(layout_structure, properties, image)
+
     def generate_card(self, prediction: Dict, image: Image,
                       image_np: np.array, card_format: str):
         """
@@ -159,8 +208,9 @@ class PredictCard:
         card_arrange = CardArrange()
         card_arrange.remove_noise_objects(json_objects)
 
-        # get design object properties
-        self.get_object_properties(json_objects["objects"], image)
+        if not config.NEW_LAYOUT_STRUCTURE:
+            # get design object properties
+            self.get_object_properties(json_objects["objects"], image)
         # Get image coordinates from custom image pipeline
         # if config.USE_CUSTOM_IMAGE_PIPELINE:
         #     self.get_image_objects(json_objects, detected_coords,
@@ -175,11 +225,14 @@ class PredictCard:
             "$schema": "http://adaptivecards.io/schemas/adaptive-card.json"
         }
 
-        body, ymins = card_arrange.build_card_json(
-            objects=json_objects.get("objects", []), image=image)
-        # Sort the elements vertically
-        body = [x for _, x in sorted(zip(ymins, body),
-                                     key=lambda x: x[0])]
+        if config.NEW_LAYOUT_STRUCTURE:
+            body = self.new_layout_generation(json_objects, image)
+        else:
+            body, ymins = card_arrange.build_card_json(
+                objects=json_objects.get("objects", []), image=image)
+            # Sort the elements vertically
+            body = [x for _, x in sorted(zip(ymins, body),
+                                         key=lambda x: x[0])]
         # if format==template - generate template data json
         return_dict["card_json"] = {}.fromkeys(["data", "card"], {})
         if card_format == "template":

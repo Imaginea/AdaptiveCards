@@ -4,7 +4,7 @@ import base64
 import math
 import operator
 from io import BytesIO
-from typing import Tuple, Dict, List, Any
+from typing import Tuple, Dict, List, Any, Union
 
 import numpy as np
 from PIL import Image
@@ -16,12 +16,40 @@ from mystique.extract_properties_abstract import (AbstractFontColor,
                                                   AbstractBaseExtractProperties
                                                   )
 
+from mystique.export_to_card import ExportToTargetPlatform, \
+    MergingTemplate
+
 
 class BaseExtractProperties(AbstractBaseExtractProperties):
 
     """
     Base Class for all design objects property extraction.
     """
+    def get_container_properties(self, design_object: Union[Dict, List[Dict]],
+                                 pil_image):
+
+        export_object = ExportToTargetPlatform()
+        export_object.containers.remove("choiceset")
+        if isinstance(design_object, list):
+            for design_obj in design_object:
+                self.get_container_properties(design_obj, pil_image)
+
+        elif isinstance(design_object, dict) and design_object.get(
+                "properties", {}).get("object", "") in \
+                export_object.containers:
+
+            collect_properties = CollectProperties(pil_image)
+            property_object = getattr(collect_properties,
+                                      design_object.get("properties", {}).get(
+                                              "object", ""))
+            merging_template = MergingTemplate(design_object)
+            merging_template_object = getattr(merging_template,
+                                              design_object.get(
+                                                "properties", {}).get(
+                                                "object", ""))
+            design_object.update(property_object(design_object))
+            self.get_container_properties(merging_template_object(),
+                                          pil_image)
 
     def get_alignment(self, image: Image, xmin: float, xmax: float) -> str:
         """
@@ -371,6 +399,8 @@ class CollectProperties(TextBoxProperty, ChoiceSetProperty,
                               color
     from image objects - extracts image size and image text
     """
+    def __init__(self, image=None):
+        self.pil_image = image
 
     def find_iou(self, coord1, coord2, inter_object=False,
                  columns_group=False) -> List:
@@ -430,7 +460,8 @@ class CollectProperties(TextBoxProperty, ChoiceSetProperty,
         return [False]
 
     def get_column_width_keys(self, default_config: Dict, ratio: Tuple,
-                              column_set: Dict, column_number: int) -> None:
+                              column_set: Dict,
+                              column_number: int) -> Union[Dict, None]:
         """
         Extract the column width key from the default config which is minimum
         in distance with the given point / ratio
@@ -444,7 +475,58 @@ class CollectProperties(TextBoxProperty, ChoiceSetProperty,
                                       np.asarray(tuple(point))) ** 2)))
                      for point in keys]
         key = keys[distances.index(min(distances))]
+        if config.NEW_LAYOUT_STRUCTURE:
+            column_set["row"][column_number][
+                "properties"]["width"] = default_config[key]
+            return column_set
         column_set["columns"][column_number]["width"] = default_config[key]
+
+    def extract_column_width_new_layout(self, column_set: Dict,
+                                        column_coords: List[List],
+                                        column_coords_min: List[List],
+                                        image: Image) -> Dict:
+        """
+        Extract column width property for the given columnset based on the
+        mid point distance between 2 design objects.
+        @param column_set: list of column design objects
+        @param column_coords: each column's max coordinate values of a
+                              column set
+        @param image: input PIL image
+        @param column_coords_min: each column's min coordinate values of a
+                                  column set
+        """
+        column_xmin, column_ymin, column_xmax, column_ymax = column_coords
+        (column_xmin_min, column_ymin_min,
+         column_xmax_min, column_ymax_min) = column_coords_min
+        columns = column_set.get("row", [])
+        for ctr, column in enumerate(columns):
+            if ctr + 1 < len(columns):
+                mid_point1 = np.asarray(
+                        ((column_xmin[ctr] + column_xmax[ctr])/2,
+                         (column_ymin[ctr] + column_ymax[ctr])/2))
+                mid_point2 = np.asarray(
+                        ((column_xmin_min[ctr + 1]
+                          + column_xmax_min[ctr + 1]) / 2,
+                         (column_ymin_min[ctr + 1]
+                          + column_ymax_min[ctr + 1]) / 2))
+
+                a = np.asarray((column_xmin[ctr], column_ymin[ctr]))
+                b = np.asarray((column_xmax[ctr+1], column_ymax[ctr+1]))
+                end_distance = np.sqrt(np.sum(((a - b) ** 2)))
+                mid_distance = np.sqrt(np.sum(((mid_point1 - mid_point2) ** 2)))
+                mid_distance = (mid_distance / end_distance) * 100
+                ratio = (1, mid_distance)
+                column_set = self.get_column_width_keys(
+                    config.COLUMN_WIDTH_DISTANCE, ratio,
+                    column_set, ctr)
+            if ctr == len(columns) - 1:
+                w, h = image.size
+                last_diff = (abs(column_xmax[ctr] - w) / w) * 100
+                ratio = (1, last_diff)
+                column_set = self.get_column_width_keys(
+                    config.LAST_COLUMN_THRESHOLD, ratio,
+                    column_set, ctr)
+        return column_set
 
     def extract_column_width(self, column_set: Dict,
                              column_coords: List[List],
@@ -499,20 +581,23 @@ class CollectProperties(TextBoxProperty, ChoiceSetProperty,
         based on the horizontal alignment of each items inside the column
         @param columns: List of columns[for a columnset]
         """
-        preference_order = ["Left", "Center", "Right"]
-        for column in columns:
-            alignment = list(map(operator.itemgetter('horizontalAlignment'),
-                                 column["items"]))
-            if len(alignment) == len(list(set(alignment))):
-                alignment.sort(key=(preference_order+alignment).index)
-                alignment = alignment[0]
-            else:
-                alignment = max(alignment, key=alignment.count)
-            column.update({"horizontalAlignment": alignment})
+        if not config.NEW_LAYOUT_STRUCTURE:
+            preference_order = ["Left", "Center", "Right"]
+            for column in columns:
+                alignment = list(map(operator.itemgetter('horizontalAlignment'),
+                                     column["items"]))
+                if len(alignment) == len(list(set(alignment))):
+                    alignment.sort(key=(preference_order+alignment).index)
+                    alignment = alignment[0]
+                else:
+                    alignment = max(alignment, key=alignment.count)
+                column.update({"horizontalAlignment": alignment})
+        else:
+            return columns
 
-    def columnset(self, columnset: Dict, column_coords: List[List],
-                  column_coords_min: List[List],
-                  image: Image) -> None:
+    def columnset(self, columnset: Dict, column_coords =None,
+                  column_coords_min =None,
+                  image =None) -> Union[Dict, None]:
         """
         Updates the horizontal alignment property for the columnset,
         based on the horizontal alignment of each column inside the columnset.
@@ -524,14 +609,58 @@ class CollectProperties(TextBoxProperty, ChoiceSetProperty,
         @param column_coords_min: each column's min coordinates values of a
                                   column set
         """
-        preference_order = ["Left", "Center", "Right"]
-        alignment = list(map(operator.itemgetter('horizontalAlignment'),
-                             columnset["columns"]))
-        if len(alignment) == len(list(set(alignment))):
-            alignment.sort(key=(preference_order + alignment).index)
-            alignment = alignment[0]
+        if not config.NEW_LAYOUT_STRUCTURE:
+            preference_order = ["Left", "Center", "Right"]
+            alignment = list(map(operator.itemgetter('horizontalAlignment'),
+                                 columnset["columns"]))
+            if len(alignment) == len(list(set(alignment))):
+                alignment.sort(key=(preference_order + alignment).index)
+                alignment = alignment[0]
+            else:
+                alignment = max(alignment, key=alignment.count)
+            columnset.update({"horizontalAlignment": alignment})
+            self.extract_column_width(columnset, column_coords,
+                                      column_coords_min,
+                                      image)
         else:
-            alignment = max(alignment, key=alignment.count)
-        columnset.update({"horizontalAlignment": alignment})
-        self.extract_column_width(columnset, column_coords, column_coords_min,
-                                  image)
+            columns_max = [[], [], [], []]
+            columns_min = [[], [], [], []]
+            for column in columnset.get("row", []):
+                item_coords = [
+                        item.get("imageset", {}).get("images", [])[0].get(
+                                "coordinates", ()) if item.get(
+                                "properties").get(
+                                "object") == "imageset" else item.get(
+                                "coordinates", ())
+                        for item in column.get("column", {}).get("items",
+                                [])]
+                columns_max[0].append(max([coord[0] for coord in item_coords]))
+                columns_max[1].append(max([coord[1] for coord in item_coords]))
+                columns_max[2].append(max([coord[2] for coord in item_coords]))
+                columns_max[3].append(max([coord[3] for coord in item_coords]))
+
+                columns_min[0].append(min([coord[0] for coord in item_coords]))
+                columns_min[1].append(min([coord[1] for coord in item_coords]))
+                columns_min[2].append(min([coord[2] for coord in item_coords]))
+                columns_min[3].append(min([coord[3] for coord in item_coords]))
+
+            columnset = self.extract_column_width_new_layout(
+                    columnset, columns_max, columns_min,
+                    self.pil_image)
+            return columnset
+
+    def imageset(self, design_object):
+        sizes = []
+        for images in design_object.get("imageset").get("images", []):
+            sizes.append(images.get("properties", {}).get("size", ""))
+        if len(sizes) == len(list(set(sizes))):
+            size = "Auto"
+        else:
+            size = max(sizes, key=sizes.count)
+
+        design_object.get("properties").update({"size": size})
+        return design_object
+
+    def container(self, design_object):
+        self.get_container_properties(design_object, self.pil_image)
+        return design_object

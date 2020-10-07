@@ -1,6 +1,75 @@
 """Module for template json for different design obejcts"""
 from typing import Dict
 
+class ElementStructureTemplate:
+    """
+
+    """
+
+    def __init__(self, design_element):
+        self.design_element = design_element
+
+    def individual(self) -> Dict:
+        """
+        Returns the design structure for the individual card design elements
+        @return: design structure
+        """
+        element_property = {
+                "object": self.design_element.get("object", ""),
+                "class": self.design_element.get("class", ""),
+                "data": self.design_element.get("data"),
+                "uuid": self.design_element.get("uuid"),
+                "coordinates": self.design_element.get("coords", ())
+        }
+        return {
+                "properties": element_property,
+                "coordinates": self.design_element.get("coords", ())
+        }
+
+    def column_set(self) -> Dict:
+        """
+        Returns the design structure for the column-set container
+        @return: design structure
+        """
+        element_property = {"object": "columnset"}
+        return {
+                "properties": element_property,
+                "row": [],
+        }
+
+    def column(self) -> Dict:
+        """
+        Returns the design structure for the column of the column-set container
+        @return: design structure
+        """
+        element_property = {"object": "column"}
+        return {
+                "column": {"items": []},
+                "properties": element_property
+        }
+
+    def imageset(self) -> Dict:
+        """
+        Returns the design structure for the image-set container
+        @return: design structure
+        """
+        element_property = {"object": "imageset"}
+        return {
+                "imageset": {"images": []},
+                "properties": element_property
+        }
+
+    def choiceset(self) -> Dict:
+        """
+        Returns the design structure for the choice-set container
+        @return: design structure
+        """
+        element_property = {"object": "choiceset"}
+        return {
+                "choiceset": {"choices": []},
+                "properties": element_property
+        }
+
 
 class ObjectTemplate:
     """
@@ -95,9 +164,71 @@ class ObjectTemplate:
         Returns the design json for the radiobutton
         @return: design object
         """
+        choice_set = {
+                "type": "Input.ChoiceSet",
+                "choices": [],
+                "style": "expanded"
+        }
+        if isinstance(self.design_object, list):
+            for design_obj in self.design_object:
+                item = {
+                        "title": design_obj.get("data", ""),
+                        "value": "",
+                        "horizontalAlignment": design_obj.get(
+                                "horizontal_alignment", "")
+                }
+                choice_set["choices"].append(item)
+        else:
+            item = {
+                    "title": self.design_object.get("data", ""),
+                    "value": "",
+                    "horizontalAlignment": self.design_object.get(
+                            "horizontal_alignment", "")
+            }
+            # choice_set["choices"].append(item)
+            choice_set = item
+
+        return choice_set
+
+    def columnset(self) -> Dict:
+        """
+        Returns the design json for the column set container
+        @return: design object
+        """
         return {
-            "title": self.design_object.get("data", ""),
-            "value": "",
-            "horizontalAlignment": self.design_object.get(
-                "horizontal_alignment", "")
+                "type": "ColumnSet",
+                "columns": []
+        }
+
+    def column(self) -> Dict:
+        """
+        Returns the design json for the column of the column set container
+        @return: design object
+        """
+        # "width": self.design_object.get("properties", {}).get(
+        # "width", "")
+        return {
+                "type": "Column",
+                "width": self.design_object.get(
+                        "width", ""),
+
+                "items": []
+        }
+
+    def imageset(self) -> Dict:
+        """
+        Returns the design json for the image set container
+        @return: design object
+        """
+        return {
+                "type": "ImageSet",
+                "imageSize": self.design_object.get("size", ""),
+                "images": []
+        }
+
+    def choiceset(self) -> Dict:
+        return {
+                "type": "Input.ChoiceSet",
+                "choices": [],
+                "style": "expanded"
         }
