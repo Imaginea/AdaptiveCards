@@ -1,9 +1,10 @@
 """Module for template json for different design obejcts"""
 from typing import Dict
 
+
 class ElementStructureTemplate:
     """
-
+    Layout structure template for the deisgn elements
     """
 
     def __init__(self, design_element):

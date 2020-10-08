@@ -16,8 +16,7 @@ from mystique.extract_properties_abstract import (AbstractFontColor,
                                                   AbstractBaseExtractProperties
                                                   )
 
-from mystique.export_to_card import ExportToTargetPlatform, \
-    MergingTemplate
+from .export_to_card import ExportToTargetPlatform, ContainerDetailTemplate
 
 
 class BaseExtractProperties(AbstractBaseExtractProperties):
@@ -42,13 +41,13 @@ class BaseExtractProperties(AbstractBaseExtractProperties):
             property_object = getattr(collect_properties,
                                       design_object.get("properties", {}).get(
                                               "object", ""))
-            merging_template = MergingTemplate(design_object)
-            merging_template_object = getattr(merging_template,
-                                              design_object.get(
+            container_objects = ContainerDetailTemplate(design_object)
+            container_objects = getattr(container_objects,
+                                        design_object.get(
                                                 "properties", {}).get(
                                                 "object", ""))
             design_object.update(property_object(design_object))
-            self.get_container_properties(merging_template_object(),
+            self.get_container_properties(container_objects(),
                                           pil_image)
 
     def get_alignment(self, image: Image, xmin: float, xmax: float) -> str:
@@ -575,7 +574,7 @@ class CollectProperties(TextBoxProperty, ChoiceSetProperty,
                     config.LAST_COLUMN_THRESHOLD, ratio,
                     column_set, ctr)
 
-    def column(self, columns: Dict):
+    def column(self, columns: Dict) -> Union[None, Dict]:
         """
         Updates the horizontal alignment property for the columns,
         based on the horizontal alignment of each items inside the column
@@ -595,9 +594,9 @@ class CollectProperties(TextBoxProperty, ChoiceSetProperty,
         else:
             return columns
 
-    def columnset(self, columnset: Dict, column_coords =None,
-                  column_coords_min =None,
-                  image =None) -> Union[Dict, None]:
+    def columnset(self, columnset: Dict, column_coords=None,
+                  column_coords_min=None,
+                  image=None) -> Union[None, Dict]:
         """
         Updates the horizontal alignment property for the columnset,
         based on the horizontal alignment of each column inside the columnset.
@@ -633,7 +632,7 @@ class CollectProperties(TextBoxProperty, ChoiceSetProperty,
                                 "object") == "imageset" else item.get(
                                 "coordinates", ())
                         for item in column.get("column", {}).get("items",
-                                [])]
+                                                                 [])]
                 columns_max[0].append(max([coord[0] for coord in item_coords]))
                 columns_max[1].append(max([coord[1] for coord in item_coords]))
                 columns_max[2].append(max([coord[2] for coord in item_coords]))
@@ -649,7 +648,13 @@ class CollectProperties(TextBoxProperty, ChoiceSetProperty,
                     self.pil_image)
             return columnset
 
-    def imageset(self, design_object):
+    def imageset(self, design_object: Dict) -> Dict:
+        """
+        Returns the image-set container properties
+        @param design_object: image-set layout structure with merged
+                              image properties
+        @return: image-set properties dict
+        """
         sizes = []
         for images in design_object.get("imageset").get("images", []):
             sizes.append(images.get("properties", {}).get("size", ""))
@@ -661,6 +666,11 @@ class CollectProperties(TextBoxProperty, ChoiceSetProperty,
         design_object.get("properties").update({"size": size})
         return design_object
 
-    def container(self, design_object):
+    def container(self, design_object: List[Dict]) -> List[Dict]:
+        """
+        Extracts and returns the container properties
+        @param design_object: input layout structure
+        @return: layout structure with extracted container properties
+        """
         self.get_container_properties(design_object, self.pil_image)
         return design_object

@@ -1,28 +1,25 @@
 """Module to  get the predicted adaptive card json"""
 
-import json
-import os
-from typing import Dict, List, Tuple
 import base64
 import io
-
-
-import cv2
-from PIL import Image
-import numpy as np
-import requests
+import json
+import os
 import uuid
 from multiprocessing import Process, Queue
-from pprint import pprint
+from typing import Dict, List, Tuple
 
+import cv2
+import numpy as np
+import requests
+from PIL import Image
 from mystique import config
-from mystique.utils import get_property_method
 from mystique.arrange_card import CardArrange
-from mystique.image_extraction import ImageExtraction
 from mystique.card_template import DataBinding
-from mystique.extract_properties import CollectProperties
 from mystique.export_to_card import ExportToTargetPlatform
+from mystique.extract_properties import CollectProperties
 from mystique.generate_datastrucure import GenerateLayoutDataStructure
+from mystique.image_extraction import ImageExtraction
+from mystique.utils import get_property_method
 
 
 class PredictCard:
@@ -87,6 +84,7 @@ class PredictCard:
         Extract each design object's properties.
         @param design_objects: List of design objects collected from the model.
         @param pil_image: Input PIL image
+        @param queue: Queue object of the calling process
         """
         # Creating an Extract Property class instance
         collect_prop = CollectProperties()
@@ -97,6 +95,8 @@ class PredictCard:
             property_element = property_object(pil_image,
                                                design_object.get("coords"))
             design_object.update(property_element)
+        # If any Queue object is passed , put the return value inside the
+        # queue in-order to retrieve the value after the process finishes.
         if queue:
             queue.put(design_objects)
 
@@ -148,7 +148,13 @@ class PredictCard:
                                   image, image_np, card_format)
         return card
 
-    def layout_generation(self, json_objects, queue):
+    def layout_generation(self, json_objects: List, queue: Queue) -> List[Dict]:
+        """
+        Returns the generated hierarchical layout structure.
+        @param json_objects: extracted list of design objects
+        @param queue: Queue object of the calling process
+        @return: Generated layout structure
+        """
         final_ds = []
         generate_data_structure = GenerateLayoutDataStructure()
         generate_data_structure.column_set_container_grouping(
@@ -159,19 +165,34 @@ class PredictCard:
             queue.put(final_ds)
         return final_ds
 
-    def export_to_card(self, layout_data_structure, properites, pil_image):
+    def export_to_card(self, layout_data_structure: List[Dict],
+                       properties, pil_image) -> List:
+        """
+        Returns the exported adaptive card design body.
+        @param layout_data_structure: Generated hierarchical layout structure.
+        @param properties: List of design object with properties extracted.
+        @param pil_image: Input design image
+        @return: Exported adaptive card json body
+        """
 
         export_card = ExportToTargetPlatform()
-        export_card.merge_properties(properites, layout_data_structure)
+        export_card.merge_properties(properties, layout_data_structure)
         collect_properties = CollectProperties(pil_image)
         property_object = getattr(collect_properties, "container")
         layout_data_structure = property_object(layout_data_structure)
-        card_json = export_card.build_adaptive_card(layout_data_structure)
-        # debug_string = export_card.build_testing_format(layout_data_structure)
-        # print("".join(debug_string))
-        return card_json["body"]
+        body = export_card.build_adaptive_card(layout_data_structure)
+        return body
 
-    def new_layout_generation(self, json_objects, image):
+    def new_layout_generation(self, json_objects: Dict, image: Image) -> List:
+        """
+        Performs the property extraction and hierarchical layout structuring
+        in parallel and merges both on completion to export it to the adaptive
+        card json body.
+        @param json_objects: List of extracted design objects
+        @param image: input design image
+        @return: exported adaptive card json body
+        """
+
         queue1 = Queue()
         queue2 = Queue()
         p1 = Process(target=self.get_object_properties, args=(
@@ -208,6 +229,8 @@ class PredictCard:
         card_arrange = CardArrange()
         card_arrange.remove_noise_objects(json_objects)
 
+        # The property extraction happens sequentially only if the
+        # NEW_LAYOUT_STRUCTURE is not enabled
         if not config.NEW_LAYOUT_STRUCTURE:
             # get design object properties
             self.get_object_properties(json_objects["objects"], image)
@@ -225,6 +248,10 @@ class PredictCard:
             "$schema": "http://adaptivecards.io/schemas/adaptive-card.json"
         }
 
+        # If the NEW_LAYOUT_STRUCTURE is enabled in the config
+        # performs the card arranging as recursive hierarchical layout
+        # structuring and property extraction in parallel and finally
+        # merges both to export it to card json body
         if config.NEW_LAYOUT_STRUCTURE:
             body = self.new_layout_generation(json_objects, image)
         else:

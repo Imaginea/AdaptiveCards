@@ -1,8 +1,11 @@
+"""Module responsible for the hierarchical layout structure generation from the
+   extracted design objects with the help of the spatial details from the
+   image model"""
 from typing import List, Dict, Tuple, Union
 
-from .object_grouping import ColumnsGrouping
-from .object_grouping import ImageGrouping
-from .object_grouping import ChoicesetGrouping
+from .group_design_objects import ColumnsGrouping
+from .group_design_objects import ImageGrouping
+from .group_design_objects import ChoicesetGrouping
 from .design_objects_template import ElementStructureTemplate
 
 
@@ -231,8 +234,8 @@ class GenerateLayoutDataStructure:
         @param object_type: type of grouping
         @param grouping_object: grouping logic object
         @param grouping_condition: grouping condition for the given type
-        @param order_key:
-
+        @param order_key: positional key for the container by which it has to
+                          be sorted [ x-way or y-way ]
         @return: The new layout structure after grouping
         """
 
@@ -283,13 +286,13 @@ class GenerateLayoutDataStructure:
         Calls the object grouping for list of design element inside a particular
         column.
         @param layout_structure: the generated layout structure
-        @param object_class:
-        @param grouping_type:
-        @param grouping_object:
-        @param grouping_condition:
-        @param order_key:
-
-        @return:
+        @param object_class: The class value of the grouping container
+        @param grouping_type: The name of the container type
+        @param grouping_object: The object of the respective grouping class
+        @param grouping_condition: The condition needed for the respective
+                                   container grouping
+        @param order_key:positional key for the container by which it has to
+                          be sorted [ x-way or y-way ]
         """
 
         for row_counter, design_object in enumerate(layout_structure):
@@ -333,11 +336,17 @@ class GenerateLayoutDataStructure:
                                 grouping_object, grouping_condition, order_key)
 
     def other_containers_grouping(self,
-                                  layout_structure: List[Dict]):
+                                  layout_structure: List[Dict]) -> List[Dict]:
+        """
+        Calls the object grouping for list of design element in the root level
+        of the design.
+        @param layout_structure: the generated layout structure
+        @return: Grouped layout structure
+        """
 
         # image set grouping
         image_grouping = ImageGrouping(self)
-        condition = image_grouping.imageset_condition
+        condition = image_grouping.new_layout_imageset_condition
         self.other_grouping_for_columns(layout_structure, 5, "imageset",
                                         image_grouping, condition, 0)
         items, _ = self.get_items(layout_structure, 5)
@@ -346,7 +355,7 @@ class GenerateLayoutDataStructure:
                                               image_grouping, condition, 0)
         # choice set grouping
         choice_grouping = ChoicesetGrouping(self)
-        condition = choice_grouping.choiceset_condition
+        condition = choice_grouping.new_layout_choiceset_condition
         self.other_grouping_for_columns(layout_structure, 2, "choiceset",
                                         choice_grouping, condition, 1)
         items, _ = self.get_items(layout_structure, 2)

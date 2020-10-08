@@ -73,6 +73,38 @@ class ImageGrouping(GroupObjects):
     def __init__(self, card_arrange):
         self.card_arrange = card_arrange
 
+    def new_layout_imageset_condition(self, design_object1: Dict,
+                                      design_object2: Dict) -> bool:
+        """
+        Returns a condition boolean value for grouping image objects into
+        imagesets
+        @param design_object1: image object
+        @param design_object2: image object
+        @return: boolean value
+        """
+        (design_object1_xmin,
+         design_object1_ymin,
+         design_object1_xmax,
+         design_object1_ymax) = design_object1.get("properties", {}).get(
+                "coordinates", [])
+        (design_object2_xmin,
+         design_object2_ymin,
+         design_object2_xmax,
+         design_object2_ymax) = design_object2.get("properties", {}).get(
+                "coordinates", [])
+        if design_object1_xmin < design_object2_xmin:
+            xmax = design_object1_xmax
+            xmin = design_object2_xmin
+        else:
+            xmax = design_object2_xmax
+            xmin = design_object1_xmin
+        ymin_diff = abs(
+                design_object1_ymin - design_object2_ymin
+        )
+        x_diff = abs(xmax - xmin)
+        return (ymin_diff <= self.IMAGE_SET_YMIN_RANGE
+                and x_diff <= self.IMAGE_SET_X_RANGE)
+
     def imageset_condition(self, design_object1: Dict,
                            design_object2: Dict) -> bool:
         """
@@ -397,6 +429,38 @@ class ChoicesetGrouping(GroupObjects):
 
     def __init__(self, card_arrange):
         self.card_arrange = card_arrange
+
+    def new_layout_choiceset_condition(self, design_object1: Dict,
+                                       design_object2: Dict) -> bool:
+        """
+        Returns a condition boolean value for grouping radio buttion objects
+        into choiceset
+        @param design_object1: image object
+        @param design_object2: image object
+        @return: boolean value
+        """
+        (design_object1_xmin,
+         design_object1_ymin,
+         design_object1_xmax,
+         design_object1_ymax) = design_object1.get("properties", {}).get(
+                "coordinates", [])
+        (design_object2_xmin,
+         design_object2_ymin,
+         design_object2_xmax,
+         design_object2_ymax) = design_object2.get("properties", {}).get(
+                "coordinates", [])
+        design_object1_ymin = float(design_object1_ymin)
+        design_object2_ymin = float(design_object2_ymin)
+        difference_in_ymin = abs(design_object1_ymin - design_object2_ymin)
+        if design_object1_ymin > design_object2_ymin:
+            difference_in_y = float(
+                    design_object2_ymax) - design_object1_ymin
+        else:
+            difference_in_y = float(
+                    design_object1_ymax) - design_object2_ymin
+
+        return (abs(difference_in_y) <= self.CHOICESET_Y_RANGE
+                and difference_in_ymin <= self.CHOICESET_YMIN_RANGE)
 
     def choiceset_condition(self, design_object1: Dict,
                             design_object2: Dict) -> bool:
