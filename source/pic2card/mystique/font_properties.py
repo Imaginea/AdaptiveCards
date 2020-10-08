@@ -169,3 +169,57 @@ class FontPropMorph(FontPropBoundingBox):
             weight = "Default"
 
         return weight
+
+
+class FontPropMorphV2(FontPropBoundingBox):
+    """
+     Class handles extraction of font weight property
+     using morphology operations with updated thresholds
+     based on tweaking morphs threshold.
+     """
+
+    def get_weight(self, image: Image, coords: Tuple, img_data: None) -> str:
+        """
+        Extract the weight of the each words by
+        skeletization applying morph operations on
+        the input image
+
+        @param image : input PIL image
+        @param coords: list of coordinated from which
+                       text and height should be extracted
+        @return: weight
+        """
+        cropped_image = image.crop(coords)
+        c_img = np.asarray(cropped_image)
+        gray = cv2.cvtColor(c_img, cv2.COLOR_BGR2GRAY)
+        # Converting input image to binary format
+        _, img = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY_INV)
+        area_of_img = np.count_nonzero(img)
+        # creating an empty skeleton
+        skel = np.zeros(img.shape, np.uint8)
+        kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3))
+        # Loop until erosion leads to thinning text in image to singular pixel
+        while True:
+            morph_open = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
+            temp = cv2.subtract(img, morph_open)
+            eroded = cv2.erode(img, kernel)
+            skel = cv2.bitwise_or(skel, temp)
+            img = eroded.copy()
+            # if no white pixels left the image has been completely eroded
+            if cv2.countNonZero(img) == 0:
+                break
+        # length of the lines in text
+        area_of_skel = np.sum(skel) / 255
+        # width of line = area of the line / length of the line
+        thickness = round(area_of_img / area_of_skel, 2)
+
+        font_weight = default_host_configs.FONT_WEIGHT_MORPH_V2
+
+        if font_weight['lighter'] >= thickness:
+            weight = "Lighter"
+        elif font_weight['bolder'] <= thickness:
+            weight = "Bolder"
+        else:
+            weight = "Default"
+
+        return weight

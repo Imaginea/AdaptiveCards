@@ -57,10 +57,11 @@ PROPERTY_EXTRACTOR_FUNC = {
 # Font size and weight property class registry
 FONT_SPEC_REGISTRY = {
     "font_morph": "mystique.font_properties.FontPropMorph",
-    "font_bbox": "mystique.font_properties.FontPropBoundingBox"
+    "font_bbox": "mystique.font_properties.FontPropBoundingBox",
+    "font_morph_v2": "mystique.font_properties.FontPropMorphV2"
 }
 # active font prop pipelne
-ACTIVE_FONTSPEC_NAME = "font_bbox"
+ACTIVE_FONTSPEC_NAME = "font_morph_v2"
 
 # image detection swtiching paramater
 # On True [ uses custom image pipeline for image objects]
