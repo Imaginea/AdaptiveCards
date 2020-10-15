@@ -1,6 +1,6 @@
 """Module for grouping deisgn objects into different containers"""
 from operator import itemgetter
-from typing import List, Dict, Callable, Tuple, Optional
+from typing import List, Dict, Callable, Tuple, Optional, Any
 
 from mystique import config
 from mystique.extract_properties import CollectProperties
@@ -11,6 +11,57 @@ class GroupObjects:
     Handles the grouping of given list of objects for any set conditions that
     is passed.
     """
+    def max_min_difference(self, coordinates_1: Any,
+                           coordinates_2: Any, way: str) -> float:
+        """
+        Returns the ymax-ymin difference of the 2 deisgn objects
+
+        @param coordinates_1: design object one's coordinates
+        @param coordinates_2: design object two's coordinates
+        @param way: xmax-xmin or ymax-ymin difference
+
+        @return: max-min difference ratios
+        """
+        if isinstance(coordinates_1, dict) and isinstance(coordinates_2, dict):
+            coordinates_1 = [coordinates_1.get("xmin"),
+                             coordinates_1.get("ymin"),
+                             coordinates_1.get("xmax"),
+                             coordinates_1.get("ymax")]
+            coordinates_2 = [coordinates_2.get("xmin"),
+                             coordinates_2.get("ymin"),
+                             coordinates_2.get("xmax"),
+                             coordinates_2.get("ymax")]
+        mid_point1_y = abs(coordinates_1[3] -
+                           coordinates_1[1]) / 2 + coordinates_1[1]
+        mid_point1_x = abs(coordinates_1[2] -
+                           coordinates_1[0]) / 2 + coordinates_1[0]
+
+        mid_point2_y = abs(coordinates_2[3] -
+                           coordinates_2[1]) / 2 + coordinates_2[1]
+        mid_point2_x = abs(coordinates_2[2] -
+                           coordinates_2[0]) / 2 + coordinates_2[0]
+
+        mid_point_y = abs(mid_point1_y - mid_point2_y)
+        mid_point_x = abs(mid_point1_x - mid_point2_x)
+
+        max_way = 3
+        min_way = 1
+        mid_size = mid_point_y
+        if way == "x":
+            max_way = 2
+            min_way = 0
+            mid_size = mid_point_x
+        if coordinates_1[max_way] < coordinates_2[min_way]:
+            value = round(
+                    abs(coordinates_2[min_way] - coordinates_1[max_way]))
+        else:
+            value = round(
+                    abs(coordinates_1[min_way] - coordinates_2[max_way]))
+        if mid_size > 0:
+            return value / mid_size
+        else:
+            return 0
+
     def object_grouping(self, design_objects: List[Dict],
                         condition: Callable[[Dict, Dict],
                                             bool]) -> List[List[Dict]]:
@@ -65,67 +116,49 @@ class ImageGrouping(GroupObjects):
     individual image objects.
     """
 
-    # Image objects within the 10px ymin range and 100px range difference are
-    # grouped into imagesets.
-    IMAGE_SET_YMIN_RANGE = 10.0
-    IMAGE_SET_X_RANGE = 100.0
-
     def __init__(self, card_arrange):
         self.card_arrange = card_arrange
 
-    def new_layout_imageset_condition(self, design_object1: Dict,
-                                      design_object2: Dict) -> bool:
+    def imageset_condition(self, coordinates_1: Any,
+                           coordinates_2: Any) -> bool:
         """
         Returns a condition boolean value for grouping image objects into
         imagesets
-        @param design_object1: image object
-        @param design_object2: image object
+        @param coordinates_1: image object one's coordinates
+        @param coordinates_2: image object two's coordinates
         @return: boolean value
         """
-        (design_object1_xmin,
-         design_object1_ymin,
-         design_object1_xmax,
-         design_object1_ymax) = design_object1.get("properties", {}).get(
-                "coordinates", [])
-        (design_object2_xmin,
-         design_object2_ymin,
-         design_object2_xmax,
-         design_object2_ymax) = design_object2.get("properties", {}).get(
-                "coordinates", [])
-        if design_object1_xmin < design_object2_xmin:
-            xmax = design_object1_xmax
-            xmin = design_object2_xmin
+        if not coordinates_1.get("properties", {}) and not coordinates_1.get(
+                "properties", {}):
+            coordinates_1 = [coordinates_1.get("xmin"),
+                             coordinates_1.get("ymin"),
+                             coordinates_1.get("xmax"),
+                             coordinates_1.get("ymax")]
+            coordinates_2 = [coordinates_2.get("xmin"),
+                             coordinates_2.get("ymin"),
+                             coordinates_2.get("xmax"),
+                             coordinates_2.get("ymax")]
         else:
-            xmax = design_object2_xmax
-            xmin = design_object1_xmin
-        ymin_diff = abs(
-                design_object1_ymin - design_object2_ymin
-        )
-        x_diff = abs(xmax - xmin)
-        return (ymin_diff <= self.IMAGE_SET_YMIN_RANGE
-                and x_diff <= self.IMAGE_SET_X_RANGE)
+            coordinates_1 = coordinates_1.get("properties", {}).get(
+                    "coordinates", [])
+            coordinates_2 = coordinates_2.get("properties", {}).get(
+                    "coordinates", [])
 
-    def imageset_condition(self, design_object1: Dict,
-                           design_object2: Dict) -> bool:
-        """
-        Returns a condition boolean value for grouping image objects into
-        imagesets
-        @param design_object1: image object
-        @param design_object2: image object
-        @return: boolean value
-        """
-        if design_object1.get("xmin") < design_object2.get("xmin"):
-            xmax = design_object1.get("xmax")
-            xmin = design_object2.get("xmin")
+        y_min_difference = abs(coordinates_1[1] - coordinates_2[1])
+
+        if coordinates_1[1] < coordinates_2[1]:
+            y_min_difference = y_min_difference / (abs(coordinates_1[1] -
+                                                       coordinates_2[3]))
         else:
-            xmax = design_object2.get("xmax")
-            xmin = design_object1.get("xmin")
-        ymin_diff = abs(
-                design_object1.get("ymin") - design_object2.get("ymin")
-        )
-        x_diff = abs(xmax - xmin)
-        return (ymin_diff <= self.IMAGE_SET_YMIN_RANGE
-                and x_diff <= self.IMAGE_SET_X_RANGE)
+            y_min_difference = y_min_difference / (
+                    abs(coordinates_2[1] - coordinates_1[3]))
+        x_diff = self.max_min_difference(coordinates_1,
+                                         coordinates_2, way="x")
+        return (y_min_difference <= config.CONTAINER_GROUPING.get(
+                "ymin_difference")
+                and x_diff <= config.CONTAINER_GROUPING.get(
+                        "xmax-xmin_difference"))
+
 
     def group_image_objects(self, image_objects, body, objects, ymins=None,
                             is_column=None) -> [List, Optional[Tuple]]:
@@ -299,28 +332,6 @@ class ColumnsGrouping(GroupObjects):
                          ))
         )
 
-    def max_min_difference(self, design_object1: Dict,
-                           design_object2: Dict, way: str) -> float:
-        """
-        Returns the ymax-ymin difference of the 2 deisgn objects
-
-        @param design_object1: design object one
-        @param design_object2: design object two
-        @param way: xmax-xmin or ymax-ymin difference
-
-        @return: rounded ymax-ymin difference
-        """
-        max = "ymax"
-        min = "ymin"
-        if way == "x":
-            max = "xmax"
-            min = "xmin"
-
-        if design_object1.get(min) < design_object2.get(min):
-            return round(abs(design_object2.get(min) - design_object1.get(max)))
-        else:
-            return round(abs(design_object1.get(min) - design_object2.get(max)))
-
     def columns_condition(self, design_object1: Dict,
                           design_object2: Dict) -> bool:
         """
@@ -333,6 +344,13 @@ class ColumnsGrouping(GroupObjects):
 
         y_diff = self.max_min_difference(design_object1, design_object2,
                                          way="y")
+        y_min_difference = abs(design_object1.get(
+                "ymin", 0) - design_object2.get("ymin", 0))
+        object_one, object_two = self.check_greater(design_object1,
+                                                    design_object2, "ymin",
+                                                    "ymax")
+        y_min_difference = y_min_difference / (
+                abs(object_two.get("ymin") - object_one.get("ymax")))
 
         object_one = None
         object_two = None
@@ -349,14 +367,56 @@ class ColumnsGrouping(GroupObjects):
             object_one = design_object1
             object_two = design_object2
         return (design_object1 != design_object2 and (
-                (abs(design_object1.get("ymin", 0)
-                     - design_object2.get("ymin", 0))
-                 <= config.COLUMNSET_GROUPING.get("ymin_difference", ""))
+                (y_min_difference
+                 <= config.CONTAINER_GROUPING.get("ymin_difference", ""))
                 or self.vertical_inclusive(object_one, object_two)
                 or (y_diff <
-                    config.COLUMNSET_GROUPING.get("ymax-ymin_difference", "")
+                    config.CONTAINER_GROUPING.get("ymax-ymin_difference", "")
                     and self.horizontal_inclusive(object_one, object_two)
                     )))
+
+    def check_greater(self, design_object1: Dict, design_object2: Dict,
+                      min_way: str, max_way: str) -> Tuple[Dict, Dict]:
+        """
+        Returns the (greater, lesser) design objects based on the given x or y
+        range
+        @param design_object1: design object one
+        @param design_object2: design object two
+        @param min_way: x or y way minimum
+        @param max_way: x or y way maximum
+        @return: Tuple(greater , lesser) among the design objects
+        """
+
+        if (design_object1.get(max_way) - design_object1.get(min_way)) >= (
+                design_object2.get(max_way) - design_object2.get(min_way)):
+            return design_object1, design_object2
+        else:
+            return design_object2, design_object1
+
+    def check_overlap_ties(self, design_object1: Dict, design_object2: Dict,
+                           x_way_overlap_distance: float,
+                           y_way_overlap_distance: float) -> bool:
+        """
+        Checks which way of overlap is greatest and return true i.e should be
+        inside a column of x-way overlap percentage is greater than y-way
+        overlap between the 2 design objects.
+        @param design_object1: design object one
+        @param design_object2: design object two
+        @param x_way_overlap_distance: overlapping region's width
+        @param y_way_overlap_distance: overlapping region's height
+        @return: a boolean value
+        """
+        object_one, object_two = self.check_greater(design_object1,
+                                                    design_object2,
+                                                    "xmin", "xmax")
+        width = abs(object_one.get("xmax") - object_one.get("xmin"))
+        object_one, object_two = self.check_greater(design_object1,
+                                                    design_object2,
+                                                    "ymin", "ymax")
+        height = abs(object_one.get("ymax") - object_one.get("ymin"))
+
+        if x_way_overlap_distance / width >= y_way_overlap_distance / height:
+            return True
 
     def columns_row_condition(self, design_object1: Dict,
                               design_object2: Dict) -> bool:
@@ -370,6 +430,15 @@ class ColumnsGrouping(GroupObjects):
         extract_properites = CollectProperties()
         x_diff = self.max_min_difference(design_object1, design_object2,
                                          way="x")
+        y_min_difference = abs(design_object1.get(
+                "ymin", 0) - design_object2.get("ymin", 0))
+
+        object_one, object_two = self.check_greater(design_object1,
+                                                    design_object2, "ymin",
+                                                    "ymax")
+        y_min_difference = y_min_difference / (
+                abs(object_two.get("ymin") - object_one.get("ymax")))
+
         point1 = (design_object1.get("xmin"), design_object1.get("ymin"),
                   design_object1.get("xmax"), design_object1.get("ymax"))
         point2 = (design_object2.get("xmin"), design_object2.get("ymin"),
@@ -385,34 +454,41 @@ class ColumnsGrouping(GroupObjects):
         condition = (design_object1 != design_object2
                      and ((design_object1.get("object") == "image"
                            and design_object2.get("object") == "image"
-                           and abs(design_object1.get("ymin")
-                                   - design_object2.get("ymin"))
-                           <= config.COLUMNSET_GROUPING.get("ymin_difference")
-                           and x_diff <= config.COLUMNSET_GROUPING.get(
+                           and y_min_difference
+                           <= config.CONTAINER_GROUPING.get("ymin_difference")
+                           and x_diff <= config.CONTAINER_GROUPING.get(
                                 "xmax-xmin_difference", ""))
                           or self.horizontal_inclusive(object_one, object_two)
                           )
                      )
 
+        object_one, object_two = self.check_greater(design_object1,
+                                                    design_object2,
+                                                    "ymin", "ymax")
+        x_way_overlap = (
+                object_one.get("ymin") <= object_two.get("ymin") <=
+                object_one.get("ymax")
+                or object_one.get("ymin") <= object_two.get("ymax") <=
+                object_one.get("ymax"))
+        object_one, object_two = self.check_greater(design_object1,
+                                                    design_object2,
+                                                    "xmin", "xmax")
+        y_way_overlap = (
+                object_one.get("xmin") <= object_two.get("xmin") <=
+                object_one.get("xmax")
+                or object_one.get("xmin") <= object_two.get("xmax") <=
+                object_one.get("xmax"))
         intersection = extract_properites.find_iou(point1, point2,
-                                                   columns_group=True)[0]
-        if intersection and point1 != point2:
-            condition = condition and (
-                    intersection
-                    and (
-                            (object_one.get("xmin") <=
-                             object_two.get("xmin") <= object_one.get("xmax")
-                             and object_one.get("xmin") <=
-                             object_two.get("xmax") <= object_one.get("xmax")
-                             )
-                            or (object_two.get("xmin") <=
-                                object_one.get("xmin") <= object_two.get("xmax")
-                                and object_two.get("xmin") <=
-                                object_one.get("xmax") <= object_two.get("xmax")
-                                )
-                    )
-            )
-
+                                                   columns_group=True)
+        if intersection[0] and point1 != point2:
+            if x_way_overlap and y_way_overlap:
+                x_way_overlap_distance = intersection[1]
+                y_way_overlap_distance = intersection[2]
+                condition = self.check_overlap_ties(
+                        design_object1, design_object2, x_way_overlap_distance,
+                        y_way_overlap_distance)
+            else:
+                condition = condition and y_way_overlap
         return condition
 
 
@@ -421,68 +497,49 @@ class ChoicesetGrouping(GroupObjects):
     Groups the radiobutton objects of the adaptive card objects into a
     choiceset or individual radiobuttion objects.
     """
-    # The design objects are grouped in choicesets based on 2 conditions:
-    # If the radiobuttons are within the range of 10px of ymax - ymin
-    # If the radiobuttons are within the rnage of 30px of ymins.
-    CHOICESET_Y_RANGE = 10
-    CHOICESET_YMIN_RANGE = 30
 
     def __init__(self, card_arrange):
         self.card_arrange = card_arrange
 
-    def new_layout_choiceset_condition(self, design_object1: Dict,
-                                       design_object2: Dict) -> bool:
+    def choiceset_condition(self, coordinates_1: Dict,
+                            coordinates_2: Dict) -> bool:
         """
         Returns a condition boolean value for grouping radio buttion objects
         into choiceset
-        @param design_object1: image object
-        @param design_object2: image object
+        @param coordinates_1: choiceset object's coordinates
+        @param coordinates_2: choiceset object's coordinates
         @return: boolean value
         """
-        (design_object1_xmin,
-         design_object1_ymin,
-         design_object1_xmax,
-         design_object1_ymax) = design_object1.get("properties", {}).get(
-                "coordinates", [])
-        (design_object2_xmin,
-         design_object2_ymin,
-         design_object2_xmax,
-         design_object2_ymax) = design_object2.get("properties", {}).get(
-                "coordinates", [])
-        design_object1_ymin = float(design_object1_ymin)
-        design_object2_ymin = float(design_object2_ymin)
-        difference_in_ymin = abs(design_object1_ymin - design_object2_ymin)
-        if design_object1_ymin > design_object2_ymin:
-            difference_in_y = float(
-                    design_object2_ymax) - design_object1_ymin
+        if not coordinates_1.get("properties", {}) and not coordinates_1.get(
+                "properties", {}):
+            coordinates_1 = [coordinates_1.get("xmin"),
+                             coordinates_1.get("ymin"),
+                             coordinates_1.get("xmax"),
+                             coordinates_1.get("ymax")]
+            coordinates_2 = [coordinates_2.get("xmin"),
+                             coordinates_2.get("ymin"),
+                             coordinates_2.get("xmax"),
+                             coordinates_2.get("ymax")]
         else:
-            difference_in_y = float(
-                    design_object1_ymax) - design_object2_ymin
+            coordinates_1 = coordinates_1.get("properties", {}).get(
+                    "coordinates", [])
+            coordinates_2 = coordinates_2.get("properties", {}).get(
+                    "coordinates", [])
+        y_min_difference = abs(coordinates_1[1] - coordinates_2[1])
 
-        return (abs(difference_in_y) <= self.CHOICESET_Y_RANGE
-                and difference_in_ymin <= self.CHOICESET_YMIN_RANGE)
-
-    def choiceset_condition(self, design_object1: Dict,
-                            design_object2: Dict) -> bool:
-        """
-        Returns a condition boolean value for grouping radio buttion objects
-        into choiceset
-        @param design_object1: image object
-        @param design_object2: image object
-        @return: boolean value
-        """
-        design_object1_ymin = float(design_object1.get("ymin"))
-        design_object2_ymin = float(design_object2.get("ymin"))
-        difference_in_ymin = abs(design_object1_ymin - design_object2_ymin)
-        if design_object1_ymin > design_object2_ymin:
-            difference_in_y = float(
-                    design_object2.get("ymax")) - design_object1_ymin
+        if coordinates_1[1] < coordinates_2[1]:
+            y_min_difference = y_min_difference / (abs(coordinates_1[1] -
+                                                       coordinates_2[3]))
         else:
-            difference_in_y = float(
-                    design_object1.get("ymax")) - design_object2_ymin
+            y_min_difference = y_min_difference / (
+                    abs(coordinates_2[1] - coordinates_1[3]))
+        y_diff = self.max_min_difference(coordinates_1,
+                                         coordinates_2, way="y")
 
-        return (abs(difference_in_y) <= self.CHOICESET_Y_RANGE
-                and difference_in_ymin <= self.CHOICESET_YMIN_RANGE)
+        return (abs(y_diff) <= config.CONTAINER_GROUPING.get(
+            "choiceset_ymax-ymin_difference")
+                and y_min_difference <= config.CONTAINER_GROUPING.get(
+            "choiceset_y_min_difference"))
 
     def group_choicesets(self, radiobutton_objects: Dict, body: List[Dict],
                          ymins=None) -> None:

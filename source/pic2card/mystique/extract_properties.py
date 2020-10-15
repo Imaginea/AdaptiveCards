@@ -440,8 +440,8 @@ class CollectProperties(TextBoxProperty, ChoiceSetProperty,
         if columns_group:
             if ((point1_area + point2_area - intersection_area == 0)
                     or iou > 0):
-                return [True]
-            return [False]
+                return [True, abs(x6-x5), abs(y6-y5)]
+            return [True, abs(x6-x5), abs(y6-y5)]
 
         # -if iou check is for inter object overlap removal check only for
         # intersection.

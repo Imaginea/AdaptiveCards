@@ -111,6 +111,13 @@ COLUMNSET_GROUPING = {
         "ymax-ymin_difference": 3,
         "xmax-xmin_difference": 100
 }
-
+# NORMALIZED COLUMN-SET GROUPING THRESHOLDS
+CONTAINER_GROUPING = {
+        "ymin_difference": 0.20,
+        "ymax-ymin_difference": 0.034,
+        "xmax-xmin_difference": 0.65,
+        "choiceset_y_min_difference": 0.60,
+        "choiceset_ymax-ymin_difference": 0.151
+}
 # FLAG SWITCH FOR NEW LAYOUT STRUCTURING BY DEFAULT - FALSE
-NEW_LAYOUT_STRUCTURE = False
+NEW_LAYOUT_STRUCTURE = True

@@ -346,7 +346,7 @@ class GenerateLayoutDataStructure:
 
         # image set grouping
         image_grouping = ImageGrouping(self)
-        condition = image_grouping.new_layout_imageset_condition
+        condition = image_grouping.imageset_condition
         self.other_grouping_for_columns(layout_structure, 5, "imageset",
                                         image_grouping, condition, 0)
         items, _ = self.get_items(layout_structure, 5)
@@ -355,7 +355,7 @@ class GenerateLayoutDataStructure:
                                               image_grouping, condition, 0)
         # choice set grouping
         choice_grouping = ChoicesetGrouping(self)
-        condition = choice_grouping.new_layout_choiceset_condition
+        condition = choice_grouping.choiceset_condition
         self.other_grouping_for_columns(layout_structure, 2, "choiceset",
                                         choice_grouping, condition, 1)
         items, _ = self.get_items(layout_structure, 2)
