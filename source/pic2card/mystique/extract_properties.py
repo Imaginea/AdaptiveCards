@@ -16,7 +16,8 @@ from mystique.extract_properties_abstract import (AbstractFontColor,
                                                   AbstractBaseExtractProperties
                                                   )
 
-from .export_to_card import ExportToTargetPlatform, ContainerDetailTemplate
+from .export_to_target.export_to_card import (ExportToTargetPlatform,
+                                              ContainerDetailTemplate)
 
 
 class BaseExtractProperties(AbstractBaseExtractProperties):

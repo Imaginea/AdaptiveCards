@@ -13,11 +13,11 @@ import numpy as np
 import requests
 from PIL import Image
 from mystique import config
-from mystique.arrange_card import CardArrange
-from mystique.card_template import DataBinding
-from mystique.export_to_card import ExportToTargetPlatform
+from mystique.layout_generation.arrange_card import CardArrange
+from .export_to_target.card_template import DataBinding
+from .export_to_target.export_to_card import ExportToTargetPlatform
 from mystique.extract_properties import CollectProperties
-from mystique.generate_datastrucure import GenerateLayoutDataStructure
+from .layout_generation.generate_datastrucure import GenerateLayoutDataStructure
 from mystique.image_extraction import ImageExtraction
 from mystique.utils import get_property_method
 

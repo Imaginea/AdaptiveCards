@@ -8,7 +8,7 @@ import cv2
 
 from mystique.utils import load_od_instance
 from mystique.predict_card import PredictCard
-from mystique.arrange_card import CardArrange
+from mystique.layout_generation.arrange_card import CardArrange
 from mystique.extract_properties import CollectProperties
 
 curr_dir = os.path.dirname(__file__)

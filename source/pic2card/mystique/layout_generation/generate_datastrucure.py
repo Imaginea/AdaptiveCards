@@ -6,7 +6,8 @@ from typing import List, Dict, Tuple, Union
 from .group_design_objects import ColumnsGrouping
 from .group_design_objects import ImageGrouping
 from .group_design_objects import ChoicesetGrouping
-from .design_objects_template import ElementStructureTemplate
+from mystique.export_to_target.design_objects_template import (
+    ElementStructureTemplate)
 
 
 class GenerateLayoutDataStructure:
