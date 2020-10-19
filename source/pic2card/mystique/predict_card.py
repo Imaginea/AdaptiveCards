@@ -6,7 +6,7 @@ import json
 import os
 import uuid
 from multiprocessing import Process, Queue
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import cv2
 import numpy as np
@@ -14,10 +14,10 @@ import requests
 from PIL import Image
 from mystique import config
 from mystique.layout_generation.arrange_card import CardArrange
-from .export_to_target.card_template import DataBinding
-from .export_to_target.export_to_card import ExportToTargetPlatform
+from mystique.target_rendering.card_template import DataBinding
+from mystique.target_rendering.export_to_card import ExportToTargetPlatform
 from mystique.extract_properties import CollectProperties
-from .layout_generation.generate_datastrucure import GenerateLayoutDataStructure
+from mystique.layout_generation.generate_datastrucure import GenerateLayoutDataStructure
 from mystique.image_extraction import ImageExtraction
 from mystique.utils import get_property_method
 
@@ -195,19 +195,22 @@ class PredictCard:
 
         queue1 = Queue()
         queue2 = Queue()
-        p1 = Process(target=self.get_object_properties, args=(
-                     json_objects["objects"], image, queue1,))
-        p2 = Process(target=self.layout_generation,
-                     args=(json_objects["objects"], queue2,))
-        p1.start()
-        p2.start()
+        try:
+            p1 = Process(target=self.get_object_properties, args=(
+                         json_objects["objects"], image, queue1,))
+            p2 = Process(target=self.layout_generation,
+                         args=(json_objects["objects"], queue2,))
+            p1.start()
+            p2.start()
 
-        properties = queue1.get()
-        layout_structure = queue2.get()
+            properties = queue1.get()
+            layout_structure = queue2.get()
 
-        p1.join()
-        p2.join()
-        return self.export_to_card(layout_structure, properties, image)
+            p1.join()
+            p2.join()
+            return self.export_to_card(layout_structure, properties, image)
+        except Exception:
+            return None
 
     def generate_card(self, prediction: Dict, image: Image,
                       image_np: np.array, card_format: str):

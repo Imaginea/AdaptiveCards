@@ -1,7 +1,7 @@
 """Module takes care for the exporting of the extracted
    design objects extracted to the expected renderer format"""
 from typing import List, Dict, Union
-from .design_objects_template import ObjectTemplate
+from mystique.target_rendering.design_objects_template import ObjectTemplate
 
 
 class ExportToTargetPlatform:

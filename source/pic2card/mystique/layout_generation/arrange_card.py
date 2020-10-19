@@ -3,11 +3,11 @@
 from typing import List, Dict, Union
 
 from mystique import default_host_configs
-from mystique.export_to_target.design_objects_template import ObjectTemplate
+from mystique.target_rendering.design_objects_template import ObjectTemplate
 from mystique.extract_properties import CollectProperties
-from .group_design_objects import ChoicesetGrouping
-from .group_design_objects import ColumnsGrouping
-from .group_design_objects import ImageGrouping
+from mystique.layout_generation.group_design_objects import ChoicesetGrouping
+from mystique.layout_generation.group_design_objects import ColumnsGrouping
+from mystique.layout_generation.group_design_objects import ImageGrouping
 
 
 class CardArrange:

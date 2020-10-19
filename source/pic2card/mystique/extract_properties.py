@@ -16,7 +16,7 @@ from mystique.extract_properties_abstract import (AbstractFontColor,
                                                   AbstractBaseExtractProperties
                                                   )
 
-from .export_to_target.export_to_card import (ExportToTargetPlatform,
+from .target_rendering.export_to_card import (ExportToTargetPlatform,
                                               ContainerDetailTemplate)
 
 
@@ -29,6 +29,8 @@ class BaseExtractProperties(AbstractBaseExtractProperties):
                                  pil_image):
 
         export_object = ExportToTargetPlatform()
+        # TODO: remove the choiceset removal part after the container
+        #  alignment property is added
         export_object.containers.remove("choiceset")
         if isinstance(design_object, list):
             for design_obj in design_object:

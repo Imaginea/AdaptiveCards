@@ -3,10 +3,10 @@
    image model"""
 from typing import List, Dict, Tuple, Union
 
-from .group_design_objects import ColumnsGrouping
-from .group_design_objects import ImageGrouping
-from .group_design_objects import ChoicesetGrouping
-from mystique.export_to_target.design_objects_template import (
+from mystique.layout_generation.group_design_objects import ColumnsGrouping
+from mystique.layout_generation.group_design_objects import ImageGrouping
+from mystique.layout_generation.group_design_objects import ChoicesetGrouping
+from mystique.target_rendering.design_objects_template import (
     ElementStructureTemplate)
 
 
