@@ -53,10 +53,10 @@ class GroupObjects:
             mid_size = mid_point_x
         if coordinates_1[max_way] < coordinates_2[min_way]:
             value = round(
-                    abs(coordinates_2[min_way] - coordinates_1[max_way]))
+                abs(coordinates_2[min_way] - coordinates_1[max_way]))
         else:
             value = round(
-                    abs(coordinates_1[min_way] - coordinates_2[max_way]))
+                abs(coordinates_1[min_way] - coordinates_2[max_way]))
         if mid_size > 0:
             return value / mid_size
         else:
@@ -140,9 +140,9 @@ class ImageGrouping(GroupObjects):
                              coordinates_2.get("ymax")]
         else:
             coordinates_1 = coordinates_1.get("properties", {}).get(
-                    "coordinates", [])
+                "coordinates", [])
             coordinates_2 = coordinates_2.get("properties", {}).get(
-                    "coordinates", [])
+                "coordinates", [])
 
         y_min_difference = abs(coordinates_1[1] - coordinates_2[1])
 
@@ -151,14 +151,13 @@ class ImageGrouping(GroupObjects):
                                                        coordinates_2[3]))
         else:
             y_min_difference = y_min_difference / (
-                    abs(coordinates_2[1] - coordinates_1[3]))
+                abs(coordinates_2[1] - coordinates_1[3]))
         x_diff = self.max_min_difference(coordinates_1,
                                          coordinates_2, way="x")
         return (y_min_difference <= config.CONTAINER_GROUPING.get(
-                "ymin_difference")
+            "ymin_difference")
                 and x_diff <= config.CONTAINER_GROUPING.get(
-                        "xmax-xmin_difference"))
-
+                    "xmax-xmin_difference"))
 
     def group_image_objects(self, image_objects, body, objects, ymins=None,
                             is_column=None) -> [List, Optional[Tuple]]:
@@ -187,9 +186,9 @@ class ImageGrouping(GroupObjects):
             if len(group) > 1:
                 group = sorted(group, key=lambda i: i["xmin"])
                 image_set = {
-                        "type": "ImageSet",
-                        "imageSize": "Auto",
-                        "images": []
+                    "type": "ImageSet",
+                    "imageSize": "Auto",
+                    "images": []
                 }
                 sizes = []
                 alignment = []
@@ -200,14 +199,14 @@ class ImageGrouping(GroupObjects):
                         delete_positions.append(index)
                     sizes.append(design_object.get("size", "Auto"))
                     alignment.append(design_object.get(
-                            "horizontal_alignment", "Left"))
+                        "horizontal_alignment", "Left"))
                     image_xmins.append(design_object.get("xmin"))
                     self.card_arrange.append_objects(design_object,
                                                      image_set["images"])
                 image_set["images"] = [x for _, x in sorted(
-                        zip(image_xmins,
-                            image_set["images"]),
-                        key=lambda x: x[0])]
+                    zip(image_xmins,
+                        image_set["images"]),
+                    key=lambda x: x[0])]
                 # Assign the imageset's size and alignment property based on
                 # each image's alignment and size properties inside the imgaeset
                 image_set["imageSize"] = max(set(sizes), key=sizes.count)
@@ -251,45 +250,34 @@ class ColumnsGrouping(GroupObjects):
         """
 
         return (((object_one and object_two) and (
-                                (object_one.get("xmin") <= object_two.get(
-                                        "xmin") <= object_one.get(
-                                        "xmax") and object_one.get(
-                                        "xmin") <= object_two.get(
-                                        "xmax") <= object_one.get(
-                                        "xmax"))
-                                or (object_two.get("xmin") <= object_one.get(
-                                    "xmin") <= object_two.get(
-                                    "xmax") <= object_one.get("xmax") and
-                                    object_two.get(
-                                    "xmax") <= object_one.get(
-                                    "xmax")
-                                    ) or (object_one.get(
-                                          "xmin") <= object_two.get(
-                                          "xmin") <= object_one.get(
-                                          "xmax") <= object_two.get(
-                                          "xmax") and object_two.get(
-                                          "xmax") >= object_one.get("xmin")
-                                          ))
-                 ) or ((object_two and object_one) and
-                       ((object_two.get("xmin")
-                         <= object_one.get("xmin")
-                        <= object_two.get("xmax")
-                         and object_two.get("xmin")
-                         <= object_one.get("xmax")
-                         <= object_two.get("xmax"))
-                        or (object_one.get("xmin")
-                            <= object_one.get("xmin")
-                            and object_one.get("xmax")
-                            <= object_two.get("xmax")
-                            and object_two.get("xmin")
-                            <= object_one.get("xmax")
-                            <= object_two.get("xmax"))
-                        or (object_two.get("xmin")
-                            <= object_one.get("xmin")
-                            <= object_two.get("xmax")
-                            <= object_one.get("xmax")
-                            and object_one.get("xmax")
-                            >= object_two.get("xmin"))))
+            (object_one.get("xmin") <= object_two.get(
+                "xmin") <= object_one.get("xmax")
+             and object_one.get("xmin") <= object_two.get(
+                 "xmax") <= object_one.get("xmax"))
+            or (object_two.get("xmin") <= object_one.get(
+                "xmin") <= object_two.get("xmax") <= object_one.get("xmax")
+                and object_two.get("xmax") <= object_one.get("xmax"))
+            or (object_one.get("xmin") <= object_two.get(
+                "xmin") <= object_one.get(
+                    "xmax") <= object_two.get(
+                        "xmax") and object_two.get(
+                        "xmax") >= object_one.get("xmin"))))
+                or ((object_two and object_one)
+                    and ((object_two.get("xmin") <= object_one.get(
+                        "xmin") <= object_two.get("xmax")
+                          and object_two.get("xmin") <= object_one.get(
+                              "xmax") <= object_two.get("xmax"))
+                         or (object_one.get("xmin") <= object_one.get("xmin")
+                             and object_one.get("xmax") <= object_two.get(
+                                 "xmax")
+                             and object_two.get("xmin") <= object_one.get("xmax")
+                             <= object_two.get("xmax"))
+                         or (object_two.get("xmin")
+                             <= object_one.get("xmin")
+                             <= object_two.get("xmax")
+                             <= object_one.get("xmax")
+                             and object_one.get("xmax")
+                             >= object_two.get("xmin"))))
                 )
 
     def vertical_inclusive(self, object_one: Dict, object_two: Dict) -> bool:

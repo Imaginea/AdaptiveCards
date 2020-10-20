@@ -16,15 +16,15 @@ class ElementStructureTemplate:
         @return: design structure
         """
         element_property = {
-                "object": self.design_element.get("object", ""),
-                "class": self.design_element.get("class", ""),
-                "data": self.design_element.get("data"),
-                "uuid": self.design_element.get("uuid"),
-                "coordinates": self.design_element.get("coords", ())
+            "object": self.design_element.get("object", ""),
+            "class": self.design_element.get("class", ""),
+            "data": self.design_element.get("data"),
+            "uuid": self.design_element.get("uuid"),
+            "coordinates": self.design_element.get("coords", ())
         }
         return {
-                "properties": element_property,
-                "coordinates": self.design_element.get("coords", ())
+            "properties": element_property,
+            "coordinates": self.design_element.get("coords", ())
         }
 
     def column_set(self) -> Dict:
@@ -34,8 +34,8 @@ class ElementStructureTemplate:
         """
         element_property = {"object": "columnset"}
         return {
-                "properties": element_property,
-                "row": [],
+            "properties": element_property,
+            "row": [],
         }
 
     def column(self) -> Dict:
@@ -45,8 +45,8 @@ class ElementStructureTemplate:
         """
         element_property = {"object": "column"}
         return {
-                "column": {"items": []},
-                "properties": element_property
+            "column": {"items": []},
+            "properties": element_property
         }
 
     def imageset(self) -> Dict:
@@ -56,8 +56,8 @@ class ElementStructureTemplate:
         """
         element_property = {"object": "imageset"}
         return {
-                "imageset": {"images": []},
-                "properties": element_property
+            "imageset": {"images": []},
+            "properties": element_property
         }
 
     def choiceset(self) -> Dict:
@@ -67,8 +67,8 @@ class ElementStructureTemplate:
         """
         element_property = {"object": "choiceset"}
         return {
-                "choiceset": {"choices": []},
-                "properties": element_property
+            "choiceset": {"choices": []},
+            "properties": element_property
         }
 
 
@@ -90,7 +90,7 @@ class ObjectTemplate:
             "text": self.design_object.get("data", ""),
             "size": self.design_object.get("size", ""),
             "horizontalAlignment": self.design_object.get(
-                    "horizontal_alignment", ""),
+                "horizontal_alignment", ""),
             "color": self.design_object.get("color", "Default"),
             "weight": self.design_object.get("weight", ""),
             "wrap": "true"
@@ -106,9 +106,9 @@ class ObjectTemplate:
             # "separator": "true", # Issue in data binding if
             # separator is set to True
             "actions": [{
-                    "type": "Action.Submit",
-                    "title": self.design_object.get("data"),
-                    "style": self.design_object.get("style"),
+                "type": "Action.Submit",
+                "title": self.design_object.get("data"),
+                "style": self.design_object.get("style"),
             }],
             "spacing": "Medium",
             "horizontalAlignment": self.design_object.get(
@@ -124,7 +124,7 @@ class ObjectTemplate:
             "type": "Image",
             "altText": "Image",
             "horizontalAlignment": self.design_object.get(
-                    "horizontal_alignment", ""),
+                "horizontal_alignment", ""),
             "size": self.design_object.get("size"),
             "url": self.design_object.get("data"),
         }
@@ -149,15 +149,14 @@ class ObjectTemplate:
         return {
             "type": "RichTextBlock",
             "inlines": [{
-                    "type": "TextRun",
-                        "text": self.design_object.get("data", ""),
-                        "size": self.design_object.get("size", ""),
-                        "horizontalAlignment": self.design_object.get(
-                            "horizontal_alignment", ""
-                        ),
-                        "color": self.design_object.get("color", "Default"),
-                        "weight": self.design_object.get("weight", ""),
-                        }]
+                "type": "TextRun",
+                "text": self.design_object.get("data", ""),
+                "size": self.design_object.get("size", ""),
+                "horizontalAlignment": self.design_object.get(
+                    "horizontal_alignment", ""),
+                "color": self.design_object.get("color", "Default"),
+                "weight": self.design_object.get("weight", ""),
+            }]
         }
 
     def radiobutton(self) -> Dict:
@@ -166,25 +165,25 @@ class ObjectTemplate:
         @return: design object
         """
         choice_set = {
-                "type": "Input.ChoiceSet",
-                "choices": [],
-                "style": "expanded"
+            "type": "Input.ChoiceSet",
+            "choices": [],
+            "style": "expanded"
         }
         if isinstance(self.design_object, list):
             for design_obj in self.design_object:
                 item = {
-                        "title": design_obj.get("data", ""),
-                        "value": "",
-                        "horizontalAlignment": design_obj.get(
-                                "horizontal_alignment", "")
+                    "title": design_obj.get("data", ""),
+                    "value": "",
+                    "horizontalAlignment": design_obj.get(
+                        "horizontal_alignment", "")
                 }
                 choice_set["choices"].append(item)
         else:
             item = {
-                    "title": self.design_object.get("data", ""),
-                    "value": "",
-                    "horizontalAlignment": self.design_object.get(
-                            "horizontal_alignment", "")
+                "title": self.design_object.get("data", ""),
+                "value": "",
+                "horizontalAlignment": self.design_object.get(
+                    "horizontal_alignment", "")
             }
             # choice_set["choices"].append(item)
             choice_set = item
@@ -197,8 +196,8 @@ class ObjectTemplate:
         @return: design object
         """
         return {
-                "type": "ColumnSet",
-                "columns": []
+            "type": "ColumnSet",
+            "columns": []
         }
 
     def column(self) -> Dict:
@@ -209,11 +208,11 @@ class ObjectTemplate:
         # "width": self.design_object.get("properties", {}).get(
         # "width", "")
         return {
-                "type": "Column",
-                "width": self.design_object.get(
-                        "width", ""),
+            "type": "Column",
+            "width": self.design_object.get(
+                "width", ""),
 
-                "items": []
+            "items": []
         }
 
     def imageset(self) -> Dict:
@@ -222,14 +221,14 @@ class ObjectTemplate:
         @return: design object
         """
         return {
-                "type": "ImageSet",
-                "imageSize": self.design_object.get("size", ""),
-                "images": []
+            "type": "ImageSet",
+            "imageSize": self.design_object.get("size", ""),
+            "images": []
         }
 
     def choiceset(self) -> Dict:
         return {
-                "type": "Input.ChoiceSet",
-                "choices": [],
-                "style": "expanded"
+            "type": "Input.ChoiceSet",
+            "choices": [],
+            "style": "expanded"
         }

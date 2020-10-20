@@ -8,6 +8,7 @@ from mystique.layout_generation.group_design_objects import ImageGrouping
 from mystique.layout_generation.group_design_objects import ChoicesetGrouping
 from mystique.target_rendering.design_objects_template import (
     ElementStructureTemplate)
+from mystique.target_rendering.export_to_card import ExportToTargetPlatform
 
 
 class GenerateLayoutDataStructure:
@@ -27,8 +28,8 @@ class GenerateLayoutDataStructure:
         """
         columns_grouping = ColumnsGrouping(self)
         column_sets = columns_grouping.object_grouping(
-                design_objects,
-                columns_grouping.columns_condition)
+            design_objects,
+            columns_grouping.columns_condition)
         return column_sets
 
     def group_columns(self, design_objects: List[Dict]) -> List[List[Dict]]:
@@ -41,8 +42,8 @@ class GenerateLayoutDataStructure:
         columns_grouping = ColumnsGrouping(self)
 
         columns = columns_grouping.object_grouping(
-                design_objects,
-                columns_grouping.columns_row_condition
+            design_objects,
+            columns_grouping.columns_row_condition
         )
         return columns
 
@@ -110,7 +111,7 @@ class GenerateLayoutDataStructure:
         @param design_objects: list of detected design objects
         @param layout_data_structure: layout data structure
         @param previous_column: previous grouped column objects to check for
-                                same grouping happening repeatedly 
+                                same grouping happening repeatedly
         """
         column_sets = self.group_column_set(design_objects)
         for ctr, column_set in enumerate(column_sets):
@@ -128,8 +129,9 @@ class GenerateLayoutDataStructure:
                                              "row"])
                         self.add_element("individual",
                                          layout_data_structure[row_counter][
-                                          "row"][-1].get("column",
-                                                         {}).get("items", []),
+                                             "row"][-1].get("column",
+                                                            {}).get(
+                                                                "items", []),
                                          element=column[0])
                         layout_data_structure[row_counter]["row"][-1][
                             "coordinates"] = column[0].get("coords")
@@ -139,51 +141,52 @@ class GenerateLayoutDataStructure:
                                              layout_data_structure[row_counter][
                                                  "row"])
                             column_counter = len(layout_data_structure[
-                                                  row_counter]["row"]) - 1
+                                row_counter]["row"]) - 1
                             self.column_set_container_grouping(
-                                    column,
-                                    layout_data_structure[row_counter]["row"][
-                                        column_counter]["column"]["items"],
-                                    previous_column=column)
+                                column,
+                                layout_data_structure[row_counter]["row"][
+                                    column_counter]["column"]["items"],
+                                previous_column=column)
                             if self.same_iteration:
                                 layout_data_structure[row_counter]["row"][
                                     column_counter]["column"][
-                                    "items"] = layout_data_structure[
-                                                row_counter]["row"][
+                                        "items"] = layout_data_structure[
+                                            row_counter]["row"][
                                                 column_counter]["column"][
-                                                "items"][:-1]
+                                                    "items"][:-1]
                                 for item in column:
                                     self.add_element("individual",
                                                      layout_data_structure[
-                                                         row_counter][
-                                                         "row"][
-                                                         column_counter][
-                                                         "column"].get("items",
-                                                                       []),
+                                                         row_counter]["row"][
+                                                             column_counter][
+                                                                 "column"].get(
+                                                                     "items",
+                                                                     []),
                                                      element=item)
 
                                 self.same_iteration = False
                             layout_data_structure[row_counter]["row"][
                                 column_counter][
-                                "coordinates"] = self.extract_coordinates(
-                                    layout_data_structure[row_counter]["row"][
-                                        column_counter]["column"]["items"])
+                                    "coordinates"] = self.extract_coordinates(
+                                        layout_data_structure[row_counter][
+                                            "row"][column_counter][
+                                                "column"]["items"])
 
                             column_y_minimums = [c.get("coordinates")[1]
                                                  for c in layout_data_structure[
-                                                     row_counter]["row"][
-                                                     column_counter]["column"][
-                                                     "items"]]
+                                                     row_counter]["row"]
+                                                 [column_counter]["column"]
+                                                 ["items"]]
 
                             layout_data_structure[row_counter]["row"][
                                 column_counter]["column"]["items"] = [
                                     value for _, value in sorted(
-                                            zip(column_y_minimums,
-                                                layout_data_structure[
-                                                    row_counter]["row"][
+                                        zip(column_y_minimums,
+                                            layout_data_structure[
+                                                row_counter]["row"][
                                                     column_counter][
-                                                    "column"]["items"]),
-                                            key=lambda value: value[0])]
+                                                        "column"]["items"]),
+                                        key=lambda value: value[0])]
                         else:
                             self.same_iteration = True
 
@@ -196,11 +199,11 @@ class GenerateLayoutDataStructure:
                                           layout_data_structure[row_counter][
                                               "row"]]
                         layout_data_structure[row_counter]["row"] = [
-                                value for _, value in sorted(
-                                        zip(row_x_minimums,
-                                            layout_data_structure[
-                                              row_counter]["row"]),
-                                        key=lambda value: value[0])]
+                            value for _, value in sorted(
+                                zip(row_x_minimums,
+                                    layout_data_structure[
+                                        row_counter]["row"]),
+                                key=lambda value: value[0])]
 
     def get_items(self, layout_structure: List[Dict],
                   object_class: int) -> [List, List]:
@@ -241,7 +244,7 @@ class GenerateLayoutDataStructure:
         """
 
         groups = grouping_object.object_grouping(
-                design_items, grouping_condition)
+            design_items, grouping_condition)
         for group in groups:
             if len(group) > 1:
                 sorted_group = []
@@ -266,10 +269,10 @@ class GenerateLayoutDataStructure:
                         layout_structure[-1][object_type][key])
                 order_values = [c[order_key] for c in coordinates]
                 layout_structure[-1][object_type][key] = [
-                        value for _, value in sorted(
-                                zip(order_values,
-                                    layout_structure[-1][object_type][key]),
-                                key=lambda value: value[0])]
+                    value for _, value in sorted(
+                        zip(order_values,
+                            layout_structure[-1][object_type][key]),
+                        key=lambda value: value[0])]
 
                 layout_structure = [item for item in
                                     layout_structure if item not in group]
@@ -307,34 +310,38 @@ class GenerateLayoutDataStructure:
                                        for remaining_item in remaining_items
                                        if design_object.get("properties",
                                                             {}).get(
-                                        "object") == "columnset"]
+                                                                "object") ==
+                                       "columnset"]
                     layout_structure[row_counter][
                         "row"][column_counter][
-                        "column"]["items"] = self.group_objects(
-                            items, layout_structure[row_counter][
-                             "row"][column_counter]["column"]["items"],
-                            grouping_type, grouping_object, grouping_condition,
-                            order_key)
+                            "column"]["items"] = self.group_objects(
+                                items, layout_structure[row_counter][
+                                    "row"][column_counter]["column"]["items"],
+                                grouping_type, grouping_object,
+                                grouping_condition,
+                                order_key)
                     column_y_minimums = [c.get("coordinates")[1]
                                          for c in layout_structure[
                                              row_counter]["row"][
-                                             column_counter]["column"][
-                                             "items"]]
+                                                 column_counter]["column"][
+                                                     "items"]]
                     layout_structure[row_counter]["row"][
                         column_counter]["column"]["items"] = [
                             value for _, value in sorted(
-                                    zip(column_y_minimums,
-                                        layout_structure[
-                                                row_counter]["row"][
-                                                column_counter][
+                                zip(column_y_minimums,
+                                    layout_structure[
+                                        row_counter]["row"][
+                                            column_counter][
                                                 "column"]["items"]),
-                                    key=lambda value: value[0])]
+                                key=lambda value: value[0])]
 
                     if remaining_items:
                         self.other_grouping_for_columns(layout_structure[
                             row_counter]["row"][column_counter]["column"][
-                            "items"], object_class, grouping_type,
-                                grouping_object, grouping_condition, order_key)
+                                "items"], object_class, grouping_type,
+                                                        grouping_object,
+                                                        grouping_condition,
+                                                        order_key)
 
     def other_containers_grouping(self,
                                   layout_structure: List[Dict]) -> List[Dict]:
@@ -344,24 +351,52 @@ class GenerateLayoutDataStructure:
         @param layout_structure: the generated layout structure
         @return: Grouped layout structure
         """
+        other_containers = ExportToTargetPlatform().containers
+        other_containers = [container_name
+                            for container_name in other_containers
+                            if container_name not in ['columnset', 'column']]
+        other_template_grouping = OtherContainerTemplates()
+        for container_name in other_containers:
+            other_template_grouping_object = getattr(other_template_grouping,
+                                                     container_name)
+            layout_structure = other_template_grouping_object(layout_structure)
 
-        # image set grouping
+        return layout_structure
+
+
+class OtherContainerTemplates(GenerateLayoutDataStructure):
+    """
+    Class to handle different container groupings other than columnset and
+    column.
+    """
+    def imageset(self, layout_structure: List[Dict]) -> List[Dict]:
+        """
+        Groups and returns the layout structure with the respective image-sets
+        @param layout_structure: Un-grouped layout structure.
+        @return: Grouped layout structure
+        """
         image_grouping = ImageGrouping(self)
         condition = image_grouping.imageset_condition
         self.other_grouping_for_columns(layout_structure, 5, "imageset",
                                         image_grouping, condition, 0)
         items, _ = self.get_items(layout_structure, 5)
         layout_structure = self.group_objects(items, layout_structure,
-                                              "imageset",
-                                              image_grouping, condition, 0)
-        # choice set grouping
+                                              "imageset", image_grouping,
+                                              condition, 0)
+        return layout_structure
+
+    def choiceset(self, layout_structure: List[Dict]) -> List[Dict]:
+        """
+        Groups and returns the layout structure with the respective choice-sets
+        @param layout_structure: Un-grouped layout structure.
+        @return: Grouped layout structure
+        """
         choice_grouping = ChoicesetGrouping(self)
         condition = choice_grouping.choiceset_condition
         self.other_grouping_for_columns(layout_structure, 2, "choiceset",
                                         choice_grouping, condition, 1)
         items, _ = self.get_items(layout_structure, 2)
         layout_structure = self.group_objects(items, layout_structure,
-                                              "choiceset",
-                                              choice_grouping, condition, 1)
-
+                                              "choiceset", choice_grouping,
+                                              condition, 1)
         return layout_structure

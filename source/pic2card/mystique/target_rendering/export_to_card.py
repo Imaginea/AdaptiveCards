@@ -30,7 +30,7 @@ class ExportToTargetPlatform:
                 "properties", {}).get("object", "") not in self.containers:
             extracted_properties = [prop for prop in properties if
                                     prop.get("uuid", "") == design_object.get(
-                                            "properties", {}).get("uuid")][0]
+                                        "properties", {}).get("uuid")][0]
             design_object.get("properties", {}).update(extracted_properties)
 
         elif isinstance(design_object, list):
@@ -40,7 +40,7 @@ class ExportToTargetPlatform:
             merging_template = ContainerDetailTemplate(design_object)
             merging_template_object = getattr(merging_template,
                                               design_object.get(
-                                                      "properties", {}).get(
+                                                  "properties", {}).get(
                                                       "object", ""))
             self.merge_properties(properties, merging_template_object())
 
@@ -57,7 +57,7 @@ class ExportToTargetPlatform:
             object_template = ObjectTemplate(design_object.get(
                 "properties", {}))
             template_object = getattr(object_template, design_object.get(
-                    "properties", {}).get("object", ""))
+                "properties", {}).get("object", ""))
             body.append(template_object())
         elif isinstance(design_object, list):
             for design_obj in design_object:
@@ -79,9 +79,8 @@ class ExportToTargetPlatform:
 
         y_minimum_final = [c.get("coordinates")[1] for c in
                            final_data_structure]
-        body = [value for _, value in sorted(zip(y_minimum_final,
-                                                 self.body),
-                key=lambda value:value[0])]
+        body = [value for _, value in sorted(zip(y_minimum_final, self.body),
+                                             key=lambda value: value[0])]
         return body
 
     def export_debug_string(self, debug_format: List,
@@ -107,10 +106,10 @@ class ExportToTargetPlatform:
                                          indentation=indentation)
         else:
             export_testing_string_template = ExportingTestingStringTemplate(
-                    design_object, self.final_data_structure)
+                design_object, self.final_data_structure)
             export_testing_string_template_object = getattr(
-                    export_testing_string_template,
-                    design_object.get("properties", {}).get("object", ""))
+                export_testing_string_template,
+                design_object.get("properties", {}).get("object", ""))
             export_testing_string_template_object(debug_format, indentation)
 
     def build_testing_format(self, final_data_structure: List[Dict]) -> List:
@@ -148,7 +147,7 @@ class ExportingCardTemplate(ExportToTargetPlatform):
         @param body: design element's layout structure
         """
         object_template = ObjectTemplate(self.design_object.get(
-                "properties", {}))
+            "properties", {}))
         template_object = getattr(object_template,
                                   self.design_object.get("properties",
                                                          {}).get("object", ""))
@@ -162,7 +161,7 @@ class ExportingCardTemplate(ExportToTargetPlatform):
         @param body: design element's layout structure
         """
         object_template = ObjectTemplate(self.design_object.get(
-                "properties", {}))
+            "properties", {}))
         template_object = getattr(object_template,
                                   self.design_object.get("properties",
                                                          {}).get("object", ""))
@@ -177,7 +176,7 @@ class ExportingCardTemplate(ExportToTargetPlatform):
         @param body: design element's layout structure
         """
         object_template = ObjectTemplate(self.design_object.get(
-                "properties", {}))
+            "properties", {}))
         template_object = getattr(object_template,
                                   self.design_object.get("properties",
                                                          {}).get("object", ""))
@@ -193,7 +192,7 @@ class ExportingCardTemplate(ExportToTargetPlatform):
         @param body: design element's layout structure
         """
         object_template = ObjectTemplate(self.design_object.get(
-                "properties", {}))
+            "properties", {}))
         template_object = getattr(object_template,
                                   self.design_object.get("properties",
                                                          {}).get("object", ""))
@@ -246,7 +245,7 @@ class ExportingTestingStringTemplate(ExportToTargetPlatform):
         testing_string.append(f"{tab_space}column\n")
         self.export_debug_string(testing_string,
                                  self.design_object.get("column", {}).get(
-                                                        "items", []),
+                                     "items", []),
                                  indentation=indentation)
 
     def imageset(self, testing_string, indentation) -> None:
@@ -264,7 +263,7 @@ class ExportingTestingStringTemplate(ExportToTargetPlatform):
         testing_string.append(f"{tab_space}imageset\n")
         self.export_debug_string(testing_string,
                                  self.design_object.get("imageset", {}).get(
-                                                       "images", []),
+                                     "images", []),
                                  indentation=indentation)
 
     def choiceset(self, testing_string, indentation) -> None:
@@ -282,7 +281,7 @@ class ExportingTestingStringTemplate(ExportToTargetPlatform):
         testing_string.append(f"{tab_space}choiceset\n")
         self.export_debug_string(testing_string,
                                  self.design_object.get("choiceset", {}).get(
-                                                        "choices", []),
+                                     "choices", []),
                                  indentation=indentation)
 
 
