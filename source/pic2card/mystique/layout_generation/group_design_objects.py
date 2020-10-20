@@ -270,7 +270,8 @@ class ColumnsGrouping(GroupObjects):
                          or (object_one.get("xmin") <= object_one.get("xmin")
                              and object_one.get("xmax") <= object_two.get(
                                  "xmax")
-                             and object_two.get("xmin") <= object_one.get("xmax")
+                             and object_two.get("xmin")
+                             <= object_one.get("xmax")
                              <= object_two.get("xmax"))
                          or (object_two.get("xmin")
                              <= object_one.get("xmin")

@@ -6,7 +6,7 @@ import json
 import os
 import uuid
 from multiprocessing import Process, Queue
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple
 
 import cv2
 import numpy as np
@@ -17,7 +17,8 @@ from mystique.layout_generation.arrange_card import CardArrange
 from mystique.target_rendering.card_template import DataBinding
 from mystique.target_rendering.export_to_card import ExportToTargetPlatform
 from mystique.extract_properties import CollectProperties
-from mystique.layout_generation.generate_datastrucure import GenerateLayoutDataStructure
+from mystique.layout_generation.generate_datastrucure import (
+    GenerateLayoutDataStructure)
 from mystique.image_extraction import ImageExtraction
 from mystique.utils import get_property_method
 
