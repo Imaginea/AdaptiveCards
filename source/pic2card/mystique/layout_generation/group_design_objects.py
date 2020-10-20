@@ -261,7 +261,7 @@ class ColumnsGrouping(GroupObjects):
                 "xmin") <= object_one.get(
                     "xmax") <= object_two.get(
                         "xmax") and object_two.get(
-                        "xmax") >= object_one.get("xmin"))))
+                            "xmax") >= object_one.get("xmin"))))
                 or ((object_two and object_one)
                     and ((object_two.get("xmin") <= object_one.get(
                         "xmin") <= object_two.get("xmax")
@@ -289,35 +289,33 @@ class ColumnsGrouping(GroupObjects):
         @return: the boolean value of the inclusive condition
         """
         return (
-                ((object_one and object_two) and
-                    ((object_one.get("ymin")
-                      <= object_two.get("ymin") <= object_one.get("ymax")
-                      and object_one.get("ymin") <= object_two.get("ymax")
-                      <= object_one.get("ymax"))
-                     or (object_two.get("ymin") <= object_one.get(
-                                    "ymin") <= object_two.get(
-                                    "ymax") <= object_one.get("ymax")
-                         and object_two.get("ymax") <= object_one.get("ymax"))
-                     or (object_one.get("ymin") <= object_two.get("ymin")
-                         <= object_one.get("ymax") <= object_two.get("ymax")
-                         and object_two.get("ymax") >= object_one.get("ymin"))
-                     ))
-                or ((object_two and object_one)
-                    and ((object_two.get("ymin") <= object_one.get("ymin")
-                          <= object_two.get("ymax") and object_two.get("ymin")
-                          <= object_one.get("ymax") <= object_two.get("ymax"))
-                         or (object_one.get("ymin") <= object_one.get("ymin")
-                             and object_one.get("ymax")
-                             <= object_two.get("ymax")
-                             and object_two.get("ymin")
-                             <= object_one.get("ymax")
-                             <= object_two.get("ymax"))
-                         or (object_two.get("ymin") <= object_one.get("ymin")
-                             <= object_two.get("ymax")
-                             <= object_one.get("ymax")
-                             and object_one.get("ymax")
-                             >= object_two.get("ymin"))
-                         ))
+            ((object_one and object_two) and
+             ((object_one.get("ymin")
+               <= object_two.get("ymin") <= object_one.get("ymax")
+               and object_one.get("ymin") <= object_two.get("ymax")
+               <= object_one.get("ymax"))
+              or (object_two.get("ymin") <= object_one.get(
+                  "ymin") <= object_two.get(
+                      "ymax") <= object_one.get("ymax")
+                  and object_two.get("ymax") <= object_one.get("ymax"))
+              or (object_one.get("ymin") <= object_two.get("ymin")
+                  <= object_one.get("ymax") <= object_two.get("ymax")
+                  and object_two.get("ymax") >= object_one.get("ymin"))))
+            or ((object_two and object_one)
+                and ((object_two.get("ymin") <= object_one.get("ymin")
+                      <= object_two.get("ymax") and object_two.get("ymin")
+                      <= object_one.get("ymax") <= object_two.get("ymax"))
+                     or (object_one.get("ymin") <= object_one.get("ymin")
+                         and object_one.get("ymax")
+                         <= object_two.get("ymax")
+                         and object_two.get("ymin")
+                         <= object_one.get("ymax")
+                         <= object_two.get("ymax"))
+                     or (object_two.get("ymin") <= object_one.get("ymin")
+                         <= object_two.get("ymax")
+                         <= object_one.get("ymax")
+                         and object_one.get("ymax")
+                         >= object_two.get("ymin"))))
         )
 
     def columns_condition(self, design_object1: Dict,
@@ -333,12 +331,12 @@ class ColumnsGrouping(GroupObjects):
         y_diff = self.max_min_difference(design_object1, design_object2,
                                          way="y")
         y_min_difference = abs(design_object1.get(
-                "ymin", 0) - design_object2.get("ymin", 0))
+            "ymin", 0) - design_object2.get("ymin", 0))
         object_one, object_two = self.check_greater(design_object1,
                                                     design_object2, "ymin",
                                                     "ymax")
         y_min_difference = y_min_difference / (
-                abs(object_two.get("ymin") - object_one.get("ymax")))
+            abs(object_two.get("ymin") - object_one.get("ymax")))
 
         object_one = None
         object_two = None
@@ -355,13 +353,13 @@ class ColumnsGrouping(GroupObjects):
             object_one = design_object1
             object_two = design_object2
         return (design_object1 != design_object2 and (
-                (y_min_difference
-                 <= config.CONTAINER_GROUPING.get("ymin_difference", ""))
-                or self.vertical_inclusive(object_one, object_two)
-                or (y_diff <
-                    config.CONTAINER_GROUPING.get("ymax-ymin_difference", "")
-                    and self.horizontal_inclusive(object_one, object_two)
-                    )))
+            (y_min_difference
+             <= config.CONTAINER_GROUPING.get("ymin_difference", ""))
+            or self.vertical_inclusive(object_one, object_two)
+            or (y_diff <
+                config.CONTAINER_GROUPING.get("ymax-ymin_difference", "")
+                and self.horizontal_inclusive(object_one, object_two)
+                )))
 
     def check_greater(self, design_object1: Dict, design_object2: Dict,
                       min_way: str, max_way: str) -> Tuple[Dict, Dict]:
@@ -419,13 +417,13 @@ class ColumnsGrouping(GroupObjects):
         x_diff = self.max_min_difference(design_object1, design_object2,
                                          way="x")
         y_min_difference = abs(design_object1.get(
-                "ymin", 0) - design_object2.get("ymin", 0))
+            "ymin", 0) - design_object2.get("ymin", 0))
 
         object_one, object_two = self.check_greater(design_object1,
                                                     design_object2, "ymin",
                                                     "ymax")
         y_min_difference = y_min_difference / (
-                abs(object_two.get("ymin") - object_one.get("ymax")))
+            abs(object_two.get("ymin") - object_one.get("ymax")))
 
         point1 = (design_object1.get("xmin"), design_object1.get("ymin"),
                   design_object1.get("xmax"), design_object1.get("ymax"))
@@ -445,7 +443,7 @@ class ColumnsGrouping(GroupObjects):
                            and y_min_difference
                            <= config.CONTAINER_GROUPING.get("ymin_difference")
                            and x_diff <= config.CONTAINER_GROUPING.get(
-                                "xmax-xmin_difference", ""))
+                               "xmax-xmin_difference", ""))
                           or self.horizontal_inclusive(object_one, object_two)
                           )
                      )
@@ -454,18 +452,18 @@ class ColumnsGrouping(GroupObjects):
                                                     design_object2,
                                                     "ymin", "ymax")
         x_way_overlap = (
-                object_one.get("ymin") <= object_two.get("ymin") <=
-                object_one.get("ymax")
-                or object_one.get("ymin") <= object_two.get("ymax") <=
-                object_one.get("ymax"))
+            object_one.get("ymin") <= object_two.get("ymin") <=
+            object_one.get("ymax")
+            or object_one.get("ymin") <= object_two.get("ymax") <=
+            object_one.get("ymax"))
         object_one, object_two = self.check_greater(design_object1,
                                                     design_object2,
                                                     "xmin", "xmax")
         y_way_overlap = (
-                object_one.get("xmin") <= object_two.get("xmin") <=
-                object_one.get("xmax")
-                or object_one.get("xmin") <= object_two.get("xmax") <=
-                object_one.get("xmax"))
+            object_one.get("xmin") <= object_two.get("xmin") <=
+            object_one.get("xmax")
+            or object_one.get("xmin") <= object_two.get("xmax") <=
+            object_one.get("xmax"))
         intersection = extract_properites.find_iou(point1, point2,
                                                    columns_group=True)
         if intersection[0] and point1 != point2:
@@ -473,8 +471,8 @@ class ColumnsGrouping(GroupObjects):
                 x_way_overlap_distance = intersection[1]
                 y_way_overlap_distance = intersection[2]
                 condition = self.check_overlap_ties(
-                        design_object1, design_object2, x_way_overlap_distance,
-                        y_way_overlap_distance)
+                    design_object1, design_object2, x_way_overlap_distance,
+                    y_way_overlap_distance)
             else:
                 condition = condition and y_way_overlap
         return condition
@@ -510,9 +508,9 @@ class ChoicesetGrouping(GroupObjects):
                              coordinates_2.get("ymax")]
         else:
             coordinates_1 = coordinates_1.get("properties", {}).get(
-                    "coordinates", [])
+                "coordinates", [])
             coordinates_2 = coordinates_2.get("properties", {}).get(
-                    "coordinates", [])
+                "coordinates", [])
         y_min_difference = abs(coordinates_1[1] - coordinates_2[1])
 
         if coordinates_1[1] < coordinates_2[1]:
@@ -520,14 +518,14 @@ class ChoicesetGrouping(GroupObjects):
                                                        coordinates_2[3]))
         else:
             y_min_difference = y_min_difference / (
-                    abs(coordinates_2[1] - coordinates_1[3]))
+                abs(coordinates_2[1] - coordinates_1[3]))
         y_diff = self.max_min_difference(coordinates_1,
                                          coordinates_2, way="y")
 
         return (abs(y_diff) <= config.CONTAINER_GROUPING.get(
             "choiceset_ymax-ymin_difference")
                 and y_min_difference <= config.CONTAINER_GROUPING.get(
-            "choiceset_y_min_difference"))
+                    "choiceset_y_min_difference"))
 
     def group_choicesets(self, radiobutton_objects: Dict, body: List[Dict],
                          ymins=None) -> None:
@@ -554,9 +552,9 @@ class ChoicesetGrouping(GroupObjects):
         for group in groups:
             group = sorted(group, key=itemgetter("ymin"))
             choice_set = {
-                    "type": "Input.ChoiceSet",
-                    "choices": [],
-                    "style": "expanded"
+                "type": "Input.ChoiceSet",
+                "choices": [],
+                "style": "expanded"
             }
             alignment = []
             for design_object in group:

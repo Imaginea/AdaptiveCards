@@ -158,7 +158,7 @@ class PredictCard:
         final_ds = []
         generate_data_structure = GenerateLayoutDataStructure()
         generate_data_structure.column_set_container_grouping(
-                json_objects, final_ds)
+            json_objects, final_ds)
         final_ds = generate_data_structure.other_containers_grouping(final_ds)
 
         if queue:
@@ -196,18 +196,18 @@ class PredictCard:
         queue1 = Queue()
         queue2 = Queue()
         try:
-            p1 = Process(target=self.get_object_properties, args=(
-                         json_objects["objects"], image, queue1,))
-            p2 = Process(target=self.layout_generation,
-                         args=(json_objects["objects"], queue2,))
-            p1.start()
-            p2.start()
+            process1 = Process(target=self.get_object_properties, args=(
+                json_objects["objects"], image, queue1,))
+            process2 = Process(target=self.layout_generation,
+                               args=(json_objects["objects"], queue2,))
+            process1.start()
+            process2.start()
 
             properties = queue1.get()
             layout_structure = queue2.get()
 
-            p1.join()
-            p2.join()
+            process1.join()
+            process2.join()
             return self.export_to_card(layout_structure, properties, image)
         except Exception:
             return None
@@ -302,7 +302,7 @@ class PredictCard:
         # delete image from the rcnn model detected objects and coordinates
         positions_to_remove = [ctr for ctr, design_object in enumerate(
             json_objects.get("objects", []))
-            if design_object.get("object") == "image"]
+                               if design_object.get("object") == "image"]
         json_objects["objects"] = [
             design_object for ctr, design_object in enumerate(
                 json_objects.get("objects")) if ctr not in positions_to_remove
