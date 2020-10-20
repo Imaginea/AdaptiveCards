@@ -18,7 +18,6 @@ class ElementStructureTemplate:
         element_property = {
             "object": self.design_element.get("object", ""),
             "class": self.design_element.get("class", ""),
-            "data": self.design_element.get("data"),
             "uuid": self.design_element.get("uuid"),
             "coordinates": self.design_element.get("coords", ())
         }
