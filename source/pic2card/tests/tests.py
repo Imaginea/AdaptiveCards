@@ -15,8 +15,8 @@ from mystique.extract_properties import CollectProperties
 from mystique.target_export.adaptive_card_export import (
     AdaptiveCardExport)
 from mystique.ds_layout.group_design_objects import (ColumnsGrouping,
-                                                             ImageGrouping,
-                                                             ChoicesetGrouping)
+                                                     ImageGrouping,
+                                                     ChoicesetGrouping)
 from tests.test_variables import (debug_string_test, test_img_obj1,
                                   test_img_obj2, test_cset_obj1,
                                   test_cset_obj2)

@@ -23,6 +23,7 @@ from mystique.utils import get_property_method
 from mystique.ds_layout.row_column_group import RowColumnGroup
 from mystique.ds_layout.other_container_group import OtherContainersGroup
 
+
 class PredictCard:
     """
     Collects the faster rcnn detected objects and handles the

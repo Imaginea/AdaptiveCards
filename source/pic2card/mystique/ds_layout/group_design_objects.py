@@ -109,6 +109,9 @@ class ImageGrouping(GroupObjects):
     individual image objects.
     """
 
+    Y_MIN_THRESHOLD = config.CONTAINER_GROUPING.get("ymin_difference")
+    X_THRESHOLD = config.CONTAINER_GROUPING.get("xmax_xmin_difference")
+
     def __init__(self, card_arrange=None):
         self.card_arrange = card_arrange
 
@@ -132,10 +135,8 @@ class ImageGrouping(GroupObjects):
                                          coordinates_2,
                                          min_way=0,
                                          max_way=2)
-        return (round(y_min_difference, 2) <= config.CONTAINER_GROUPING.get(
-            "ymin_difference")
-                and round(x_diff, 2) <= config.CONTAINER_GROUPING.get(
-                    "xmax_xmin_difference"))
+        return (round(y_min_difference, 2) <= self.Y_MIN_THRESHOLD
+                and round(x_diff, 2) <= self.X_THRESHOLD)
 
     def group_image_objects(self, image_objects, body, objects, ymins=None,
                             is_column=None) -> [List, Optional[Tuple]]:
@@ -216,6 +217,10 @@ class ColumnsGrouping(GroupObjects):
     """
     Groups the design objects into different columns of a columnset
     """
+    Y_MIN_THESHOLD = config.CONTAINER_GROUPING.get("ymin_difference", "")
+    Y_THRESHOLD = config.CONTAINER_GROUPING.get("ymax_ymin_difference", "")
+    X_THRESHOLD = config.CONTAINER_GROUPING.get("xmax_xmin_difference", "")
+
     def __init__(self, card_arrange=None, collect_properties=None):
         self.card_arrange = card_arrange
         self.collect_properties = collect_properties
@@ -317,11 +322,9 @@ class ColumnsGrouping(GroupObjects):
             object_two = coordinates_2
 
         return (coordinates_1 != coordinates_2 and (
-            (round(y_min_difference, 2)
-             <= config.CONTAINER_GROUPING.get("ymin_difference", ""))
+            (round(y_min_difference, 2) <= self.Y_MIN_THESHOLD)
             or self.vertical_inclusive(object_one, object_two)
-            or (round(y_diff, 2) <
-                config.CONTAINER_GROUPING.get("ymax_ymin_difference", "")
+            or (round(y_diff, 2) < self.Y_THRESHOLD
                 and self.horizontal_inclusive(object_one, object_two)
                 )))
 
@@ -396,10 +399,8 @@ class ColumnsGrouping(GroupObjects):
         condition = (coordinates_1 != coordinates_2
                      and ((coordinates_1[4] == "image"
                            and coordinates_2[4] == "image"
-                           and round(y_min_difference, 2)
-                           <= config.CONTAINER_GROUPING.get("ymin_difference")
-                           and round(x_diff, 2) <= config.CONTAINER_GROUPING.get(
-                               "xmax_xmin_difference", ""))
+                           and round(y_min_difference, 2) <= self.Y_MIN_THESHOLD
+                           and round(x_diff, 2) <= self.X_THRESHOLD)
                           or self.horizontal_inclusive(object_one, object_two)
                           )
                      )
@@ -437,6 +438,11 @@ class ChoicesetGrouping(GroupObjects):
     choiceset or individual radiobuttion objects.
     """
 
+    Y_THRESHOLD = config.CONTAINER_GROUPING.get(
+        "choiceset_ymax_ymin_difference")
+    Y_MIN_THRESHOLD = config.CONTAINER_GROUPING.get(
+        "choiceset_y_min_difference")
+
     def __init__(self, card_arrange):
         self.card_arrange = card_arrange
 
@@ -461,10 +467,8 @@ class ChoicesetGrouping(GroupObjects):
                                          coordinates_2,
                                          min_way=1, max_way=3)
 
-        return (round(y_diff, 2) <= config.CONTAINER_GROUPING.get(
-            "choiceset_ymax_ymin_difference")
-                and round(y_min_difference, 2) <= config.CONTAINER_GROUPING.get(
-                    "choiceset_y_min_difference"))
+        return (round(y_diff, 2) <= self.Y_THRESHOLD
+                and round(y_min_difference, 2) <= self.Y_MIN_THRESHOLD)
 
     def group_choicesets(self, radiobutton_objects: Dict, body: List[Dict],
                          ymins=None) -> None:

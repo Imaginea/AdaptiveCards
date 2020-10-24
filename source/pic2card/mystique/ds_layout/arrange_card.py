@@ -346,7 +346,7 @@ class CardArrange:
             # property
             container_properties.column(colummn_set["columns"])
             container_properties.columnset(colummn_set, self.column_coords,
-                                         self.column_coords_min, image)
+                                           self.column_coords_min, image)
             # add the columnset to the card json body
             body.append(colummn_set)
             ymins.append(group[0].get("ymin", ""))
