@@ -2,76 +2,7 @@
 from typing import Dict
 
 
-class ElementStructureTemplate:
-    """
-    Layout structure template for the deisgn elements
-    """
-
-    def __init__(self, design_element):
-        self.design_element = design_element
-
-    def individual(self) -> Dict:
-        """
-        Returns the design structure for the individual card design elements
-        @return: design structure
-        """
-        element_property = {
-            "object": self.design_element.get("object", ""),
-            "class": self.design_element.get("class", ""),
-            "uuid": self.design_element.get("uuid"),
-            "coordinates": self.design_element.get("coords", ())
-        }
-        return {
-            "properties": element_property,
-            "coordinates": self.design_element.get("coords", ())
-        }
-
-    def column_set(self) -> Dict:
-        """
-        Returns the design structure for the column-set container
-        @return: design structure
-        """
-        element_property = {"object": "columnset"}
-        return {
-            "properties": element_property,
-            "row": [],
-        }
-
-    def column(self) -> Dict:
-        """
-        Returns the design structure for the column of the column-set container
-        @return: design structure
-        """
-        element_property = {"object": "column"}
-        return {
-            "column": {"items": []},
-            "properties": element_property
-        }
-
-    def imageset(self) -> Dict:
-        """
-        Returns the design structure for the image-set container
-        @return: design structure
-        """
-        element_property = {"object": "imageset"}
-        return {
-            "imageset": {"images": []},
-            "properties": element_property
-        }
-
-    def choiceset(self) -> Dict:
-        """
-        Returns the design structure for the choice-set container
-        @return: design structure
-        """
-        element_property = {"object": "choiceset"}
-        return {
-            "choiceset": {"choices": []},
-            "properties": element_property
-        }
-
-
-class ObjectTemplate:
+class AdaptiveCardTemplate:
     """
     Design template class for the design objects.
     """
@@ -204,8 +135,6 @@ class ObjectTemplate:
         Returns the design json for the column of the column set container
         @return: design object
         """
-        # "width": self.design_object.get("properties", {}).get(
-        # "width", "")
         return {
             "type": "Column",
             "width": self.design_object.get(

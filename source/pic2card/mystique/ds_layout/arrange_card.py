@@ -3,11 +3,12 @@
 from typing import List, Dict, Union
 
 from mystique import default_host_configs
-from mystique.target_rendering.design_objects_template import ObjectTemplate
-from mystique.extract_properties import CollectProperties
-from mystique.layout_generation.group_design_objects import ChoicesetGrouping
-from mystique.layout_generation.group_design_objects import ColumnsGrouping
-from mystique.layout_generation.group_design_objects import ImageGrouping
+from mystique.target_export.adaptive_card_templates import (
+    AdaptiveCardTemplate)
+from mystique.extract_properties import CollectProperties, ContainerProperties
+from mystique.ds_layout.group_design_objects import ChoicesetGrouping
+from mystique.ds_layout.group_design_objects import ColumnsGrouping
+from mystique.ds_layout.group_design_objects import ImageGrouping
 
 
 class CardArrange:
@@ -167,7 +168,7 @@ class CardArrange:
         @param body: list of design elements
         @param ymins: list of ymin of design elements
         """
-        object_template = ObjectTemplate(design_object)
+        object_template = AdaptiveCardTemplate(design_object)
         template_object = getattr(object_template, design_object.get("object"))
         body.append(template_object())
         if ymins is not None:
@@ -184,7 +185,7 @@ class CardArrange:
         mapping [ inside a columnset or not ]
         @param colummn_set: Columnset object
         """
-        choiceset_grouping = ChoicesetGrouping(self)
+        choiceset_grouping = ChoicesetGrouping(card_arrange=self)
         # image_objects_columns = []
         self.column_coords[0] = []
         self.column_coords[1] = []
@@ -230,7 +231,7 @@ class CardArrange:
                     all_columns_value[2].append(design_object.get("xmax"))
                     all_columns_value[3].append(design_object.get("ymax"))
 
-            image_grouping = ImageGrouping(self)
+            image_grouping = ImageGrouping(card_arrange=self)
             if len(image_objects_columns) > 0:
                 (image_objects_columns,
                  imageset_coords) = image_grouping.group_image_objects(
@@ -306,7 +307,7 @@ class CardArrange:
         @param group: list of object in a particular group
         @param image: input PIL image for column width extraction
         """
-        collect_properties = CollectProperties()
+        container_properties = ContainerProperties()
         colummn_set = {
                 "type": "ColumnSet",
                 "columns": []
@@ -343,8 +344,8 @@ class CardArrange:
             self.column_coords[0] = sorted(self.column_coords[0])
             # collect column and columnset alignment property and column's width
             # property
-            collect_properties.column(colummn_set["columns"])
-            collect_properties.columnset(colummn_set, self.column_coords,
+            container_properties.column(colummn_set["columns"])
+            container_properties.columnset(colummn_set, self.column_coords,
                                          self.column_coords_min, image)
             # add the columnset to the card json body
             body.append(colummn_set)
@@ -356,9 +357,10 @@ class CardArrange:
         @param objects: list of all design objects
         @return: card body and ymins of deisgn elements
         """
-        image_grouping = ImageGrouping(self)
-        columns_grouping = ColumnsGrouping(self)
-        choiceset_grouping = ChoicesetGrouping(self)
+        image_grouping = ImageGrouping(card_arrange=self)
+        columns_grouping = ColumnsGrouping(
+                card_arrange=self, collect_properties=CollectProperties())
+        choiceset_grouping = ChoicesetGrouping(card_arrange=self)
         body = []
         ymins = []
         # group all objects into columnset or individual objects

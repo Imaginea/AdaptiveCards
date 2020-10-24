@@ -96,7 +96,7 @@ IMAGE_SIZE_RATIOS = {
 # Threshold values of mid point distance between 2 design objects column with
 # labels
 COLUMN_WIDTH_DISTANCE = {
-        (1.0, 46.63): "auto",
+        (1.0, 44.63): "auto",
         (1.0, 80.40): "stretch"
 }
 # Threshold values of the mid point distance for the last column in the columns
@@ -108,16 +108,19 @@ LAST_COLUMN_THRESHOLD = {
 # COLUMNSET GROUPING THRESHOLDS
 COLUMNSET_GROUPING = {
         "ymin_difference": 10.0,
-        "ymax-ymin_difference": 3,
-        "xmax-xmin_difference": 100
+        "ymax_ymin_difference": 3,
+        "xmax_xmin_difference": 100
 }
 # NORMALIZED COLUMN-SET GROUPING THRESHOLDS
 CONTAINER_GROUPING = {
-        "ymin_difference": 0.20,
-        "ymax-ymin_difference": 0.034,
-        "xmax-xmin_difference": 0.65,
+        "ymin_difference": 0.22,
+        "ymax_ymin_difference": 0.034,
+        "xmax_xmin_difference": 0.65,
         "choiceset_y_min_difference": 0.60,
-        "choiceset_ymax-ymin_difference": 0.151
+        "choiceset_ymax_ymin_difference": 0.151
 }
 # FLAG SWITCH FOR NEW LAYOUT STRUCTURING BY DEFAULT - FALSE
 NEW_LAYOUT_STRUCTURE = False
+
+# COLUMN-SET ALIGNMENT PREFERENCE ORDER
+PREFERENCE_ORDER = ["Left", "Center", "Right"]

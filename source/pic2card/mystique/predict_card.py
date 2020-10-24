@@ -13,15 +13,15 @@ import numpy as np
 import requests
 from PIL import Image
 from mystique import config
-from mystique.layout_generation.arrange_card import CardArrange
-from mystique.target_rendering.card_template import DataBinding
-from mystique.target_rendering.export_to_card import ExportToTargetPlatform
-from mystique.extract_properties import CollectProperties
-from mystique.layout_generation.generate_datastrucure import (
-    GenerateLayoutDataStructure)
+from mystique.ds_layout.arrange_card import CardArrange
+from mystique.target_export.card_template import DataBinding
+from mystique.target_export.adaptive_card_export import (
+    AdaptiveCardExport)
+from mystique.extract_properties import CollectProperties, ContainerProperties
 from mystique.image_extraction import ImageExtraction
 from mystique.utils import get_property_method
-
+from mystique.ds_layout.row_column_group import RowColumnGroup
+from mystique.ds_layout.other_container_group import OtherContainersGroup
 
 class PredictCard:
     """
@@ -156,15 +156,16 @@ class PredictCard:
         @param queue: Queue object of the calling process
         @return: Generated layout structure
         """
-        final_ds = []
-        generate_data_structure = GenerateLayoutDataStructure()
-        generate_data_structure.column_set_container_grouping(
-            json_objects, final_ds)
-        final_ds = generate_data_structure.other_containers_grouping(final_ds)
-
+        layout_structure = []
+        row_column_group = RowColumnGroup()
+        row_column_group.column_set_container_grouping(json_objects,
+                                                       layout_structure)
+        other_container_group = OtherContainersGroup()
+        layout_structure = other_container_group.other_containers_grouping(
+            layout_structure)
         if queue:
-            queue.put(final_ds)
-        return final_ds
+            queue.put(layout_structure)
+        return layout_structure
 
     def export_to_card(self, layout_data_structure: List[Dict],
                        properties, pil_image) -> List:
@@ -175,16 +176,15 @@ class PredictCard:
         @param pil_image: Input design image
         @return: Exported adaptive card json body
         """
-
-        export_card = ExportToTargetPlatform()
+        export_card = AdaptiveCardExport()
         export_card.merge_properties(properties, layout_data_structure)
-        collect_properties = CollectProperties(pil_image)
-        property_object = getattr(collect_properties, "container")
-        layout_data_structure = property_object(layout_data_structure)
+        container_properties = ContainerProperties(pil_image=pil_image)
+        layout_data_structure = container_properties.get_container_properties(
+            layout_data_structure, pil_image)
         body = export_card.build_adaptive_card(layout_data_structure)
         return body
 
-    def new_layout_generation(self, json_objects: Dict, image: Image) -> List:
+    def new_layout_generation(self, json_objects: Dict, image: Image) -> None:
         """
         Performs the property extraction and hierarchical layout structuring
         in parallel and merges both on completion to export it to the adaptive

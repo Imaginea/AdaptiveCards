@@ -10,10 +10,11 @@ import cv2
 
 from mystique.utils import load_od_instance
 from mystique.predict_card import PredictCard
-from mystique.layout_generation.arrange_card import CardArrange
+from mystique.ds_layout.arrange_card import CardArrange
 from mystique.extract_properties import CollectProperties
-from mystique.target_rendering.export_to_card import ExportToTargetPlatform
-from mystique.layout_generation.group_design_objects import (ColumnsGrouping,
+from mystique.target_export.adaptive_card_export import (
+    AdaptiveCardExport)
+from mystique.ds_layout.group_design_objects import (ColumnsGrouping,
                                                              ImageGrouping,
                                                              ChoicesetGrouping)
 from tests.test_variables import (debug_string_test, test_img_obj1,
@@ -79,8 +80,8 @@ class BaseSetUpClass(unittest.TestCase):
         self.image = Image.open(self.image_path)
         self.json_objects, _ = self.test_util.collect_json_objects(
             self.image, self.model_instance)
-        self.test_coord1 = self.json_objects['objects'][0]
-        self.test_coord2 = self.json_objects['objects'][1]
+        self.test_coord1 = self.json_objects['objects'][0].get("coords", [])
+        self.test_coord2 = self.json_objects['objects'][1].get("coords", [])
         self.card_arrange = CardArrange()
 
 
@@ -117,7 +118,7 @@ class TestIOU(BaseSetUpClass):
     def test_find_iou_overlap_false(self):
         """Tests the overlap between the given objects coordinates"""
         collect = self.collect_properties.find_iou(
-            self.test_coord1['coords'], self.test_coord2['coords'])[0]
+            self.test_coord1, self.test_coord2)[0]
         self.assertFalse(collect, msg="No overlap of textboxes")
 
     def test_find_iou_overlap_true(self):
@@ -135,7 +136,7 @@ class TestLayoutStructure(BaseSetUpClass):
     def setUp(self):
         super().setUp()
         self.test_queue = Queue()
-        self.export_card = ExportToTargetPlatform()
+        self.export_card = AdaptiveCardExport()
 
     @patch('mystique.config.NEW_LAYOUT_STRUCTURE', True)
     def test_new_layout_generation(self):
@@ -186,11 +187,19 @@ class TestColumnsGrouping(BaseSetUpClass):
 
     def test_columns_condition(self):
         """ Tests if columns are in columnset two design objects """
-        column_condition_true = self.groupobj.columns_condition(
-            self.json_objects['objects'][3],
-            self.json_objects['objects'][4])
+        coordinates_1 = list(self.json_objects['objects'][3].get("coords", ()))
+        coordinates_1.append("image")
+        coordinates_2 = list(self.json_objects['objects'][4].get("coords", ()))
+        coordinates_2.append("textbox")
+
+        column_condition_true = self.groupobj.columns_condition(coordinates_1,
+                                                                coordinates_2)
+        coordinates_1 = list(self.test_coord1)
+        coordinates_1.append("textbox")
+        coordinates_2 = list(self.test_coord2)
+        coordinates_2.append("textbox")
         column_condition_false = self.groupobj.columns_condition(
-            self.test_coord1, self.test_coord2)
+            coordinates_1, coordinates_2)
         self.assertTrue(column_condition_true)
         self.assertFalse(column_condition_false)
 
