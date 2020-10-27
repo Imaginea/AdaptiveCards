@@ -161,7 +161,7 @@ class PredictCard:
         layout_structure = []
         row_column_group = RowColumnGroup()
         row_column_group.row_column_grouping(json_objects,
-                                                       layout_structure)
+                                             layout_structure)
         container_group = ContainerGroup()
         layout_structure = container_group.containers_grouping(
             layout_structure)

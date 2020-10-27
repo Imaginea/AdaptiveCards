@@ -15,8 +15,8 @@ from mystique.extract_properties import CollectProperties
 from mystique.ac_export.adaptive_card_export import (
     AdaptiveCardExport)
 from mystique.card_layout.objects_group import (RowColumnGrouping,
-                                                     ImageGrouping,
-                                                     ChoicesetGrouping)
+                                                ImageGrouping,
+                                                ChoicesetGrouping)
 from tests.test_variables import (debug_string_test, test_img_obj1,
                                   test_img_obj2, test_cset_obj1,
                                   test_cset_obj2)
@@ -97,7 +97,7 @@ class TestIOU(BaseSetUpClass):
 
     def test_remove_noise_objects(self):
         """Tests the iou based noise removal count"""
-        self.card_arrange.remove_noise_objects(self.json_objects)
+        bbox_utils.remove_noise_objects(self.json_objects)
         self.assertEqual(len(self.json_objects["objects"]), 20)
 
     def test_image_size(self):
@@ -194,7 +194,7 @@ class TestColumnsGrouping(BaseSetUpClass):
         coordinates_2.append("textbox")
 
         column_condition_true = self.groupobj.row_condition(coordinates_1,
-                                                                coordinates_2)
+                                                            coordinates_2)
         coordinates_1 = list(self.test_coord1)
         coordinates_1.append("textbox")
         coordinates_2 = list(self.test_coord2)

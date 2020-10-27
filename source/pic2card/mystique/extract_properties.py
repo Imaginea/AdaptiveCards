@@ -16,7 +16,7 @@ from mystique.extract_properties_abstract import (AbstractFontColor,
                                                   AbstractBaseExtractProperties)
 
 from mystique.card_layout.ds_templates import (ContainerDetailTemplate,
-                                             DsTemplate)
+                                               DsTemplate)
 
 
 class BaseExtractProperties(AbstractBaseExtractProperties):

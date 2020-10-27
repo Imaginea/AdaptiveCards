@@ -3,7 +3,8 @@
 from typing import List, Dict, Union
 from mystique.ac_export.adaptive_card_templates import (
     AdaptiveCardTemplate)
-from mystique.card_layout.ds_templates import DsTemplate, ContainerDetailTemplate
+from mystique.card_layout.ds_templates import (DsTemplate,
+                                               ContainerDetailTemplate)
 from mystique.ac_export.export_templates import AcContainerExport
 from mystique.ac_export.export_templates import TestStringContainersExport
 
