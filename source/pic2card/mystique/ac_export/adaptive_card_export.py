@@ -35,6 +35,7 @@ class AdaptiveCardExport:
             extracted_properties = [prop for prop in properties
                                     if prop.get("uuid", "") ==
                                     design_object.get("uuid")][0]
+            extracted_properties.pop("coords")
             design_object.update(extracted_properties)
 
         elif isinstance(design_object, list):
