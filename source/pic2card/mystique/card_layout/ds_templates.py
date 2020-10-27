@@ -2,9 +2,8 @@
 the layout generation"""
 from typing import List, Tuple, Dict
 
-from mystique.ds_layout.group_design_objects import ImageGrouping
-from mystique.ds_layout.group_design_objects import ChoicesetGrouping
-from mystique import config
+from mystique.card_layout.objects_group import ImageGrouping
+from mystique.card_layout.objects_group import ChoicesetGrouping
 
 
 class DsTemplate:
@@ -49,63 +48,6 @@ class DsTemplate:
                 max(x_maximums),
                 max(y_maximums))
 
-    def find_iou(self, coord1, coord2, inter_object=False,
-                 columns_group=False) -> List:
-        """
-        Finds the intersecting bounding boxes by finding
-           the highest x and y ranges of the 2 coordinates
-           and determine the intersection by deciding weather
-           the new xmin > xmax or the new ymin > ymax.
-           For non image objects, includes finding the intersection
-           area to a threshold to determine intersection
-
-        @param coord1: list of coordinates of 1st object
-        @param coord2: list of coordinates of 2nd object
-        @param inter_object: check for cleaning between different overlapping
-                             objects.
-
-        @param columns_group: If the intersection finding is needed in columns
-                              grouping use case
-
-        @return: [True/False, point1 area, point2 area]
-        """
-        x5 = max(coord1[0], coord2[0])
-        y5 = max(coord1[1], coord2[1])
-        x6 = min(coord1[2], coord2[2])
-        y6 = min(coord1[3], coord2[3])
-
-        # no intersection
-        if x6 - x5 <= 0 or y6 - y5 <= 0:
-            return [False]
-
-        intersection_area = (x6 - x5) * (y6 - y5)
-        point1_area = (coord1[2] - coord1[0]) * (coord1[3] - coord1[1])
-        point2_area = (coord2[2] - coord2[0]) * (coord2[3] - coord2[1])
-        iou = (intersection_area
-               / (point1_area + point2_area - intersection_area))
-
-        # find if given 2 objects intersects or not
-        if columns_group:
-            if ((point1_area + point2_area - intersection_area == 0)
-                    or iou > 0):
-                return [True, abs(x6-x5), abs(y6-y5)]
-            return [True, abs(x6-x5), abs(y6-y5)]
-
-        # -if iou check is for inter object overlap removal check only for
-        # intersection.
-        # -if not for inter objects overlap check for iou >= threshold
-        # -if the intersection area covers more than 50% of the smaller object
-        if ((point1_area + point2_area - intersection_area == 0)
-                or (inter_object and iou > 0)
-                or (iou >= config.IOU_THRESHOLD)
-                or (iou <= config.IOU_THRESHOLD
-                    and
-                    (intersection_area /
-                     min(point1_area, point2_area)) >= 0.50)):
-            return [True, point1_area, point2_area]
-
-        return [False]
-
 
 class DsDesignTemplate:
     """
@@ -119,7 +61,7 @@ class DsDesignTemplate:
 
     def item(self) -> Dict:
         """
-        Returns the design structure for the individual card design elements
+        Returns the design structure for the primary card design elements
         @return: design structure
         """
         return {

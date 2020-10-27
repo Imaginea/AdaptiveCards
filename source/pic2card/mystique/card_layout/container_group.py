@@ -2,12 +2,12 @@
 column-set]"""
 from typing import List, Dict, Union
 
-from mystique.ds_layout.group_design_objects import ChoicesetGrouping
-from mystique.ds_layout.group_design_objects import ImageGrouping
-from mystique.ds_layout.ds_templates import DsTemplate, ContainerGroupTemplate
+from mystique.card_layout.objects_group import ChoicesetGrouping
+from mystique.card_layout.objects_group import ImageGrouping
+from mystique.card_layout.ds_templates import DsTemplate, ContainerGroupTemplate
 
 
-class OtherContainersGroup:
+class ContainerGroup:
     """
     Helps in grouping a set of similar design elements inside a column of
     or in the root level of the card layout design
@@ -152,8 +152,7 @@ class OtherContainersGroup:
                             grouping_condition,
                             order_key)
 
-    def other_containers_grouping(self,
-                                  layout_structure: List[Dict]) -> List[Dict]:
+    def containers_grouping(self, layout_structure: List[Dict]) -> List[Dict]:
         """
         Calls the object grouping for list of design element in the root level
         of the design.

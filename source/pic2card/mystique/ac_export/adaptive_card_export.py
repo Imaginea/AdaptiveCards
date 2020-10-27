@@ -1,11 +1,11 @@
 """Module takes care for the exporting of the extracted
    design objects extracted to the expected renderer format"""
 from typing import List, Dict, Union
-from mystique.target_export.adaptive_card_templates import (
+from mystique.ac_export.adaptive_card_templates import (
     AdaptiveCardTemplate)
-from mystique.ds_layout.ds_templates import DsTemplate, ContainerDetailTemplate
-from mystique.target_export.export_templates import AcContainerExport
-from mystique.target_export.export_templates import TestStringContainersExport
+from mystique.card_layout.ds_templates import DsTemplate, ContainerDetailTemplate
+from mystique.ac_export.export_templates import AcContainerExport
+from mystique.ac_export.export_templates import TestStringContainersExport
 
 
 class AdaptiveCardExport:

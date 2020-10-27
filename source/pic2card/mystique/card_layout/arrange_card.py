@@ -1,14 +1,14 @@
 """Module for arranging the design elements for the Card json"""
 
-from typing import List, Dict, Union
+from typing import List, Dict
 
 from mystique import default_host_configs
-from mystique.target_export.adaptive_card_templates import (
+from mystique.ac_export.adaptive_card_templates import (
     AdaptiveCardTemplate)
 from mystique.extract_properties import CollectProperties, ContainerProperties
-from mystique.ds_layout.group_design_objects import ChoicesetGrouping
-from mystique.ds_layout.group_design_objects import ColumnsGrouping
-from mystique.ds_layout.group_design_objects import ImageGrouping
+from mystique.card_layout.objects_group import ChoicesetGrouping
+from mystique.card_layout.objects_group import RowColumnGrouping
+from mystique.card_layout.objects_group import ImageGrouping
 
 
 class CardArrange:
@@ -23,84 +23,6 @@ class CardArrange:
     """
     column_coords = [[]] * 4
     column_coords_min = [[]] * 4
-
-    def remove_actionset_textbox_overlapping(self, design_object1: Dict,
-                                             design_object2: Dict,
-                                             box1: List[float],
-                                             box2: List[float],
-                                             position1: int,
-                                             position2: int) -> Union[int,
-                                                                      None]:
-        """
-        If the passed 2 design objects are actionset and textbox, then
-        returns the position to remove the textboxes detected inside the
-        actionset objects.
-        @param design_object1: design object 1
-        @param design_object2: design object 1
-        @param box2: design object 1's coordinates
-        @param box1: design object 1's coordinates
-        @param position1: design object 1's position
-        @param position2: design object 2's position
-        @return: Returns the position if overlaps else returns None
-        """
-        # TODO: This workaround will be removed once the model is able to
-        #       differentiate the text-boxes and action-sets efficiently.
-        if len({design_object1.get("object", ""),
-                design_object2.get("object", "")} & {"actionset",
-                                                     "textbox"}) == 2:
-            contains = (
-                (box2[0] <= box1[0] <= box2[2])
-                and (box2[1] <= box1[1] <= box2[3])
-            )
-            extract_properties = CollectProperties()
-            intersection = extract_properties.find_iou(box1, box2,
-                                                       inter_object=True)
-            if contains or intersection[0]:
-                if design_object1.get("object") == "textbox":
-                    return position1
-                else:
-                    return position2
-            else:
-                return None
-
-    def remove_noise_objects(self, json_objects: Dict):
-        """
-        Removes all noisy objects by eliminating all smaller and intersecting
-                objects within / with the bigger objects.
-        @param json_objects: list of detected objects.
-        """
-        points = []
-        extract_properties = CollectProperties()
-        for deisgn_object in json_objects["objects"]:
-            points.append(deisgn_object.get("coords"))
-        positions_to_delete = []
-        for ctr, point in enumerate(points):
-            box1 = point
-            for ctr1 in range(ctr + 1, len(points)):
-                box2 = points[ctr1]
-                # check if there's a textbox vs actionset overlap
-                # remove the textbox
-                position = self.remove_actionset_textbox_overlapping(
-                        json_objects["objects"][ctr],
-                        json_objects["objects"][ctr1],
-                        box1, box2, ctr, ctr1)
-                if position:
-                    positions_to_delete.append(position)
-                else:
-                    iou = extract_properties.find_iou(box1, box2)
-                    if iou[0]:
-                        box1_area = iou[1]
-                        box2_area = iou[2]
-                        if (box1_area > box2_area
-                                and ctr1 not in positions_to_delete):
-                            positions_to_delete.append(ctr1)
-                        elif ctr not in positions_to_delete:
-                            positions_to_delete.append(ctr)
-        points = [p for ctr, p in enumerate(
-                points) if ctr not in positions_to_delete]
-        json_objects["objects"] = [deisgn_object for deisgn_object in
-                                   json_objects["objects"] if
-                                   deisgn_object.get("coords") in points]
 
     def append_image_objects(self, image_urls=None, image_coords=None,
                              pil_image=None, json_object=None,
@@ -358,15 +280,14 @@ class CardArrange:
         @return: card body and ymins of deisgn elements
         """
         image_grouping = ImageGrouping(card_arrange=self)
-        columns_grouping = ColumnsGrouping(
-                card_arrange=self, collect_properties=CollectProperties())
+        columns_grouping = RowColumnGrouping(card_arrange=self)
         choiceset_grouping = ChoicesetGrouping(card_arrange=self)
         body = []
         ymins = []
         # group all objects into columnset or individual objects
         groups = columns_grouping.object_grouping(
                 objects,
-                columns_grouping.columns_condition
+                columns_grouping.row_condition
         )
         radio_buttons_dict = {"normal": []}
 
@@ -389,7 +310,7 @@ class CardArrange:
                 # group the columnset objects into different columns
                 columns = columns_grouping.object_grouping(
                         group,
-                        columns_grouping.columns_row_condition
+                        columns_grouping.column_condition
                 )
                 self.arrange_columns(columns, radio_buttons_dict, body, ymins,
                                      group, image)

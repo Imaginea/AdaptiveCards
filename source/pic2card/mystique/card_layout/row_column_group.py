@@ -2,8 +2,8 @@
 respective columns"""
 from typing import List, Dict
 
-from mystique.ds_layout.group_design_objects import ColumnsGrouping
-from mystique.ds_layout.ds_templates import DsTemplate
+from mystique.card_layout.objects_group import RowColumnGrouping
+from mystique.card_layout.ds_templates import DsTemplate
 from mystique.extract_properties import CollectProperties
 
 
@@ -36,11 +36,11 @@ class RowColumnGroup:
                 break
         return same
 
-    def column_set_container_grouping(self, design_objects,
-                                      layout_data_structure:
-                                      List[Dict],
-                                      previous_column=None
-                                      ) -> None:
+    def row_column_grouping(self, design_objects,
+                            layout_data_structure:
+                            List[Dict],
+                            previous_column=None
+                            ) -> None:
         """
         Group the detected design elements recursively
         into columns and column_sets and individual objects, considering each
@@ -50,10 +50,9 @@ class RowColumnGroup:
         @param previous_column: previous grouped column objects to check for
                                 same grouping happening repeatedly
         """
-        columns_grouping = ColumnsGrouping(
-            collect_properties=CollectProperties())
+        columns_grouping = RowColumnGrouping()
         column_sets = columns_grouping.object_grouping(
-            design_objects, columns_grouping.columns_condition)
+            design_objects, columns_grouping.row_condition)
         ds_template = DsTemplate()
         for column_set in column_sets:
             if len(column_set) == 1:
@@ -61,7 +60,7 @@ class RowColumnGroup:
                                               element=column_set[0])
             if len(column_set) > 1:
                 columns = columns_grouping.object_grouping(
-                    column_set, columns_grouping.columns_row_condition)
+                    column_set, columns_grouping.column_condition)
                 ds_template.add_element_to_ds("row", layout_data_structure)
                 row_counter = len(layout_data_structure) - 1
                 for column in columns:
@@ -80,7 +79,7 @@ class RowColumnGroup:
                                                          column):
                             ds_template.add_element_to_ds("column", row_columns)
                             column_counter = len(row_columns) - 1
-                            self.column_set_container_grouping(
+                            self.row_column_grouping(
                                 column,
                                 row_columns[column_counter]["column"]["items"],
                                 previous_column=column)

@@ -10,16 +10,17 @@ import cv2
 
 from mystique.utils import load_od_instance
 from mystique.predict_card import PredictCard
-from mystique.ds_layout.arrange_card import CardArrange
+from mystique.card_layout.arrange_card import CardArrange
 from mystique.extract_properties import CollectProperties
-from mystique.target_export.adaptive_card_export import (
+from mystique.ac_export.adaptive_card_export import (
     AdaptiveCardExport)
-from mystique.ds_layout.group_design_objects import (ColumnsGrouping,
+from mystique.card_layout.objects_group import (RowColumnGrouping,
                                                      ImageGrouping,
                                                      ChoicesetGrouping)
 from tests.test_variables import (debug_string_test, test_img_obj1,
                                   test_img_obj2, test_cset_obj1,
                                   test_cset_obj2)
+from mystique.card_layout import bbox_utils
 
 curr_dir = os.path.dirname(__file__)
 
@@ -117,7 +118,7 @@ class TestIOU(BaseSetUpClass):
 
     def test_find_iou_overlap_false(self):
         """Tests the overlap between the given objects coordinates"""
-        collect = self.collect_properties.find_iou(
+        collect = bbox_utils.find_iou(
             self.test_coord1, self.test_coord2)[0]
         self.assertFalse(collect, msg="No overlap of textboxes")
 
@@ -126,7 +127,7 @@ class TestIOU(BaseSetUpClass):
         c_1 = (27.695425741374493, 0.0, 479.0481896996498, 310.30650806427)
         c_2 = (11.564019257202744, 116.06978577375412, 332.18910133838654,
                332.81780552864075)
-        collect = self.collect_properties.find_iou(c_1, c_2)[0]
+        collect = bbox_utils.find_iou(c_1, c_2)[0]
         self.assertTrue(collect, msg="Overlap of textboxes")
 
 
@@ -171,7 +172,7 @@ class TestColumnsGrouping(BaseSetUpClass):
 
     def setUp(self):
         super().setUp()
-        self.groupobj = ColumnsGrouping(card_arrange=self.card_arrange)
+        self.groupobj = RowColumnGrouping(card_arrange=self.card_arrange)
 
     def test_horizontal_inclusive(self):
         """ Tests for the horizontal inclusion of two design objects """
@@ -192,13 +193,13 @@ class TestColumnsGrouping(BaseSetUpClass):
         coordinates_2 = list(self.json_objects['objects'][4].get("coords", ()))
         coordinates_2.append("textbox")
 
-        column_condition_true = self.groupobj.columns_condition(coordinates_1,
+        column_condition_true = self.groupobj.row_condition(coordinates_1,
                                                                 coordinates_2)
         coordinates_1 = list(self.test_coord1)
         coordinates_1.append("textbox")
         coordinates_2 = list(self.test_coord2)
         coordinates_2.append("textbox")
-        column_condition_false = self.groupobj.columns_condition(
+        column_condition_false = self.groupobj.row_condition(
             coordinates_1, coordinates_2)
         self.assertTrue(column_condition_true)
         self.assertFalse(column_condition_false)

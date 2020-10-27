@@ -3,6 +3,7 @@ from operator import itemgetter
 from typing import List, Dict, Callable, Tuple, Optional
 
 from mystique import config
+from mystique.card_layout import bbox_utils
 
 
 class GroupObjects:
@@ -10,27 +11,27 @@ class GroupObjects:
     Handles the grouping of given list of objects for any set conditions that
     is passed.
     """
-    def max_min_difference(self, coordinates_1: List,
-                           coordinates_2: List, min_way: int,
+    def max_min_difference(self, bbox_1: List,
+                           bbox_2: List, min_way: int,
                            max_way: int) -> float:
         """
         Returns the ymax-ymin difference of the 2 deisgn objects
 
-        @param coordinates_1: design object one's coordinates
-        @param coordinates_2: design object two's coordinates
+        @param bbox_1: design object one's coordinates
+        @param bbox_2: design object two's coordinates
         @param min_way: x or y way minimum position
         @param max_way: x or y way maximum position
         @return: max-min difference ratios
         """
-        mid_point1_y = abs(coordinates_1[3] -
-                           coordinates_1[1]) / 2 + coordinates_1[1]
-        mid_point1_x = abs(coordinates_1[2] -
-                           coordinates_1[0]) / 2 + coordinates_1[0]
+        mid_point1_y = abs(bbox_1[3] -
+                           bbox_1[1]) / 2 + bbox_1[1]
+        mid_point1_x = abs(bbox_1[2] -
+                           bbox_1[0]) / 2 + bbox_1[0]
 
-        mid_point2_y = abs(coordinates_2[3] -
-                           coordinates_2[1]) / 2 + coordinates_2[1]
-        mid_point2_x = abs(coordinates_2[2] -
-                           coordinates_2[0]) / 2 + coordinates_2[0]
+        mid_point2_y = abs(bbox_2[3] -
+                           bbox_2[1]) / 2 + bbox_2[1]
+        mid_point2_x = abs(bbox_2[2] -
+                           bbox_2[0]) / 2 + bbox_2[0]
 
         mid_point_y = abs(mid_point1_y - mid_point2_y)
         mid_point_x = abs(mid_point1_x - mid_point2_x)
@@ -38,12 +39,12 @@ class GroupObjects:
         mid_size = mid_point_y
         if min_way == 0:
             mid_size = mid_point_x
-        if coordinates_1[max_way] < coordinates_2[min_way]:
+        if bbox_1[max_way] < bbox_2[min_way]:
             value = round(
-                abs(coordinates_2[min_way] - coordinates_1[max_way]))
+                abs(bbox_2[min_way] - bbox_1[max_way]))
         else:
             value = round(
-                abs(coordinates_1[min_way] - coordinates_2[max_way]))
+                abs(bbox_1[min_way] - bbox_2[max_way]))
         if mid_size > 0:
             return value / mid_size
         else:
@@ -63,13 +64,13 @@ class GroupObjects:
         for ctr1, design_object1 in enumerate(design_objects):
             temp_list = []
             for ctr2, design_object2 in enumerate(design_objects):
-                coordinates_1 = list(design_object1.get(
+                bbox_1 = list(design_object1.get(
                     "coords", design_object1.get("coordinates")))
-                coordinates_2 = list(design_object2.get(
+                bbox_2 = list(design_object2.get(
                     "coords", design_object2.get("coordinates")))
-                coordinates_1.append(design_object1.get("object", ""))
-                coordinates_2.append(design_object2.get("object", ""))
-                if condition(coordinates_1, coordinates_2):
+                bbox_1.append(design_object1.get("object", ""))
+                bbox_2.append(design_object2.get("object", ""))
+                if condition(bbox_1, bbox_2):
                     present = False
                     present_position = -1
                     append_object = False
@@ -115,24 +116,24 @@ class ImageGrouping(GroupObjects):
     def __init__(self, card_arrange=None):
         self.card_arrange = card_arrange
 
-    def imageset_condition(self, coordinates_1: List,
-                           coordinates_2: List) -> bool:
+    def imageset_condition(self, bbox_1: List,
+                           bbox_2: List) -> bool:
         """
         Returns a boolean value to group the list of images into image-set.
-        @param coordinates_1: image object one's coordinates
-        @param coordinates_2: image object two's coordinates
+        @param bbox_1: image object one's coordinates
+        @param bbox_2: image object two's coordinates
         @return: boolean value
         """
-        y_min_difference = abs(coordinates_1[1] - coordinates_2[1])
+        y_min_difference = abs(bbox_1[1] - bbox_2[1])
 
-        if coordinates_1[1] < coordinates_2[1]:
+        if bbox_1[1] < bbox_2[1]:
             y_min_difference = y_min_difference / (
-                abs(coordinates_1[1] - coordinates_2[3]))
+                abs(bbox_1[1] - bbox_2[3]))
         else:
             y_min_difference = y_min_difference / (
-                abs(coordinates_2[1] - coordinates_1[3]))
-        x_diff = self.max_min_difference(coordinates_1,
-                                         coordinates_2,
+                abs(bbox_2[1] - bbox_1[3]))
+        x_diff = self.max_min_difference(bbox_1,
+                                         bbox_2,
                                          min_way=0,
                                          max_way=2)
         return (round(y_min_difference, 2) <= self.Y_MIN_THRESHOLD
@@ -213,7 +214,7 @@ class ImageGrouping(GroupObjects):
             return objects
 
 
-class ColumnsGrouping(GroupObjects):
+class RowColumnGrouping(GroupObjects):
     """
     Groups the design objects into different columns of a columnset
     """
@@ -221,86 +222,85 @@ class ColumnsGrouping(GroupObjects):
     Y_THRESHOLD = config.CONTAINER_GROUPING.get("ymax_ymin_difference", "")
     X_THRESHOLD = config.CONTAINER_GROUPING.get("xmax_xmin_difference", "")
 
-    def __init__(self, card_arrange=None, collect_properties=None):
+    def __init__(self, card_arrange=None):
         self.card_arrange = card_arrange
-        self.collect_properties = collect_properties
 
-    def horizontal_inclusive(self, coordinates_1: List,
-                             coordinates_2: List) -> bool:
+    def horizontal_inclusive(self, bbox_1: List,
+                             bbox_2: List) -> bool:
         """
         Returns the horizontal inclusive condition
         i.e if any one of the  objects x min and max ranges includes the
         another.
         largest object (xmin-xmax range) ⊂ smallest object (xmin-xmax range)
-        @param coordinates_1: design object one coordinates
-        @param coordinates_2: design object two coordinates
+        @param bbox_1: design object one coordinates
+        @param bbox_2: design object two coordinates
         @return: the boolean value of the inclusive condition
         """
 
-        return (((coordinates_1 and coordinates_2) and (
-            (coordinates_1[0] <= coordinates_2[0] <= coordinates_1[2]
-             and coordinates_1[0] <= coordinates_2[2] <= coordinates_1[2])
-            or (coordinates_2[0] <= coordinates_1[0] <= coordinates_2[2]
-                <= coordinates_1[2] and coordinates_2[2] <= coordinates_1[2])
-            or (coordinates_1[0] <= coordinates_2[0] <= coordinates_1[2]
-                <= coordinates_2[2] and coordinates_2[2] >= coordinates_1[0]))
-                 ) or ((coordinates_2 and coordinates_1)
-                       and ((coordinates_2[0] <= coordinates_1[0]
-                             <= coordinates_2[2] and coordinates_2[0]
-                             <= coordinates_1[2] <= coordinates_2[2])
-                            or (coordinates_1[0] <= coordinates_2[0] <=
-                                coordinates_1[2] <= coordinates_2[2]
-                                and coordinates_1[2] <= coordinates_2[2])
-                            or (coordinates_2[0] <= coordinates_1[0]
-                                <= coordinates_2[2] <= coordinates_1[2]
-                                and coordinates_1[2] >= coordinates_2[0])))
+        return (((bbox_1 and bbox_2) and (
+            (bbox_1[0] <= bbox_2[0] <= bbox_1[2]
+             and bbox_1[0] <= bbox_2[2] <= bbox_1[2])
+            or (bbox_2[0] <= bbox_1[0] <= bbox_2[2]
+                <= bbox_1[2] and bbox_2[2] <= bbox_1[2])
+            or (bbox_1[0] <= bbox_2[0] <= bbox_1[2]
+                <= bbox_2[2] and bbox_2[2] >= bbox_1[0]))
+                 ) or ((bbox_2 and bbox_1)
+                       and ((bbox_2[0] <= bbox_1[0]
+                             <= bbox_2[2] and bbox_2[0]
+                             <= bbox_1[2] <= bbox_2[2])
+                            or (bbox_1[0] <= bbox_2[0] <=
+                                bbox_1[2] <= bbox_2[2]
+                                and bbox_1[2] <= bbox_2[2])
+                            or (bbox_2[0] <= bbox_1[0]
+                                <= bbox_2[2] <= bbox_1[2]
+                                and bbox_1[2] >= bbox_2[0])))
                 )
 
-    def vertical_inclusive(self, coordinates_1: List,
-                           coordinates_2: List) -> bool:
+    def vertical_inclusive(self, bbox_1: List,
+                           bbox_2: List) -> bool:
         """
         Returns the vertical inclusive condition
         i.e if any one of the  objects y min and max ranges includes the
         another.
         largest object (ymin-ymax range) ⊂ smallest object (ymin-ymax range)
-        @param coordinates_1: design object one coordinates
-        @param coordinates_2: design object two coordinates
+        @param bbox_1: design object one coordinates
+        @param bbox_2: design object two coordinates
         @return: the boolean value of the inclusive condition
         """
         return (
-            ((coordinates_1 and coordinates_2) and
-             ((coordinates_1[1] <= coordinates_2[1] <= coordinates_1[3]
-               and coordinates_1[1] <= coordinates_2[3] <= coordinates_1[3])
-              or (coordinates_2[1] <= coordinates_1[1] <= coordinates_2[3]
-                  <= coordinates_1[3] and coordinates_2[3] <= coordinates_1[3])
-              or (coordinates_1[1] <= coordinates_2[1] <= coordinates_1[3]
-                  <= coordinates_2[3] and coordinates_2[3] >= coordinates_1[1])
-              )) or ((coordinates_2 and coordinates_1)
-                     and ((coordinates_2[1] <= coordinates_1[1]
-                           <= coordinates_2[3] and coordinates_2[1]
-                           <= coordinates_1[3] <= coordinates_2[3])
-                          or (coordinates_1[1] <= coordinates_2[1] <=
-                              coordinates_1[3] <= coordinates_2[3]
-                              and coordinates_1[3] <= coordinates_2[3])
-                          or (coordinates_2[1] <= coordinates_1[1]
-                              <= coordinates_2[3] <= coordinates_1[3]
-                              and coordinates_1[3] >= coordinates_2[1])))
+            ((bbox_1 and bbox_2) and
+             ((bbox_1[1] <= bbox_2[1] <= bbox_1[3]
+               and bbox_1[1] <= bbox_2[3] <= bbox_1[3])
+              or (bbox_2[1] <= bbox_1[1] <= bbox_2[3]
+                  <= bbox_1[3] and bbox_2[3] <= bbox_1[3])
+              or (bbox_1[1] <= bbox_2[1] <= bbox_1[3]
+                  <= bbox_2[3] and bbox_2[3] >= bbox_1[1])
+              )) or ((bbox_2 and bbox_1)
+                     and ((bbox_2[1] <= bbox_1[1]
+                           <= bbox_2[3] and bbox_2[1]
+                           <= bbox_1[3] <= bbox_2[3])
+                          or (bbox_1[1] <= bbox_2[1] <=
+                              bbox_1[3] <= bbox_2[3]
+                              and bbox_1[3] <= bbox_2[3])
+                          or (bbox_2[1] <= bbox_1[1]
+                              <= bbox_2[3] <= bbox_1[3]
+                              and bbox_1[3] >= bbox_2[1])))
         )
 
-    def columns_condition(self, coordinates_1: List,
-                          coordinates_2: List) -> bool:
+    def row_condition(self, bbox_1: List,
+                      bbox_2: List) -> bool:
         """
         Returns a boolean value to group different design objects in a row
-        @param coordinates_1: design object1 coordinates
-        @param coordinates_2: design object2 coordinates
+        @param bbox_1: design object1 coordinates
+        @param bbox_2: design object2 coordinates
         @return: boolean value
         """
 
-        y_diff = self.max_min_difference(coordinates_1, coordinates_2,
+        y_diff = self.max_min_difference(bbox_1, bbox_2,
                                          min_way=1, max_way=3)
-        y_min_difference = abs(coordinates_1[1] - coordinates_2[1])
-        object_one, object_two = self.get_greater_object(coordinates_1,
-                                                         coordinates_2,
+        y_min_difference = abs(bbox_1[1] - bbox_2[1])
+        object_one, object_two = self.get_greater_object(bbox_1,
+                                                         bbox_2,
                                                          min_way=1,
                                                          max_way=3)
         y_min_difference = y_min_difference / (
@@ -308,124 +308,122 @@ class ColumnsGrouping(GroupObjects):
 
         object_one = None
         object_two = None
-        if (coordinates_1[4] == "image"
-                and coordinates_2[4] != "image"):
-            object_one = coordinates_1
-            object_two = coordinates_2
-        elif (coordinates_2[4] == "image"
-              and coordinates_1[4] != "image"):
-            object_one = coordinates_2
-            object_two = coordinates_1
-        elif (coordinates_2[4] == "image"
-              and coordinates_1[4] == "image"):
-            object_one = coordinates_1
-            object_two = coordinates_2
+        if (bbox_1[4] == "image"
+                and bbox_2[4] != "image"):
+            object_one = bbox_1
+            object_two = bbox_2
+        elif (bbox_2[4] == "image"
+              and bbox_1[4] != "image"):
+            object_one = bbox_2
+            object_two = bbox_1
+        elif (bbox_2[4] == "image"
+              and bbox_1[4] == "image"):
+            object_one = bbox_1
+            object_two = bbox_2
 
-        return (coordinates_1 != coordinates_2 and (
+        return (bbox_1 != bbox_2 and (
             (round(y_min_difference, 2) <= self.Y_MIN_THESHOLD)
             or self.vertical_inclusive(object_one, object_two)
             or (round(y_diff, 2) < self.Y_THRESHOLD
                 and self.horizontal_inclusive(object_one, object_two)
                 )))
 
-    def get_greater_object(self, coordinates_1: List, coordinates_2: List,
+    def get_greater_object(self, bbox_1: List, bbox_2: List,
                            min_way: int, max_way: int) -> Tuple[List, List]:
         """
         Returns the (greater, lesser) design objects based on the given x or y
         range
-        @param coordinates_1: design object one
-        @param coordinates_2: design object two
+        @param bbox_1: design object one
+        @param bbox_2: design object two
         @param min_way: x or y way minimum position
         @param max_way: x or y way maximum position
         @return: Tuple(greater , lesser) among the design objects
         """
-        if (coordinates_1[max_way] - coordinates_1[min_way]) >= (
-                coordinates_2[max_way] - coordinates_2[min_way]):
-            return coordinates_1, coordinates_2
+        if (bbox_1[max_way] - bbox_1[min_way]) >= (
+                bbox_2[max_way] - bbox_2[min_way]):
+            return bbox_1, bbox_2
         else:
-            return coordinates_2, coordinates_1
+            return bbox_2, bbox_1
 
-    def check_overlap_ties(self, coordinates_1: List, coordinates_2: List,
+    def check_overlap_ties(self, bbox_1: List, bbox_2: List,
                            x_way_overlap_distance: float,
                            y_way_overlap_distance: float) -> bool:
         """
         Checks which way of overlap is greatest and return true i.e should be
         inside a column of x-way overlap percentage is greater than y-way
         overlap between the 2 design objects.
-        @param coordinates_1: design object one coordinates
-        @param coordinates_2: design object two coordinates
+        @param bbox_1: design object one coordinates
+        @param bbox_2: design object two coordinates
         @param x_way_overlap_distance: overlapping region's width
         @param y_way_overlap_distance: overlapping region's height
         @return: a boolean value
         """
-        object_one, object_two = self.get_greater_object(coordinates_1,
-                                                         coordinates_2,
+        object_one, object_two = self.get_greater_object(bbox_1,
+                                                         bbox_2,
                                                          min_way=0, max_way=2)
         width = abs(object_one[2] - object_one[0])
-        object_one, object_two = self.get_greater_object(coordinates_1,
-                                                         coordinates_2,
+        object_one, object_two = self.get_greater_object(bbox_1,
+                                                         bbox_2,
                                                          min_way=1, max_way=3)
         height = abs(object_one[3] - object_one[1])
 
         if x_way_overlap_distance / width >= y_way_overlap_distance / height:
             return True
 
-    def columns_row_condition(self, coordinates_1: List,
-                              coordinates_2: List) -> bool:
+    def column_condition(self, bbox_1: List,
+                         bbox_2: List) -> bool:
         """
         Returns a boolean value for grouping items into a column of a particular
         row.
-        @param coordinates_1: design object coordinates
-        @param coordinates_2: design object coordinates
+        @param bbox_1: design object coordinates
+        @param bbox_2: design object coordinates
         @return: boolean value
         """
-        x_diff = self.max_min_difference(coordinates_1, coordinates_2,
+        x_diff = self.max_min_difference(bbox_1, bbox_2,
                                          min_way=0, max_way=2)
-        y_min_difference = abs(coordinates_1[1] - coordinates_2[1])
+        y_min_difference = abs(bbox_1[1] - bbox_2[1])
 
-        object_one, object_two = self.get_greater_object(coordinates_1,
-                                                         coordinates_2,
+        object_one, object_two = self.get_greater_object(bbox_1,
+                                                         bbox_2,
                                                          min_way=1, max_way=3)
         y_min_difference = y_min_difference / (
             abs(object_two[1] - object_one[3]))
 
-        if coordinates_1[1] < coordinates_2[1]:
-            object_one = coordinates_1
-            object_two = coordinates_2
+        if bbox_1[1] < bbox_2[1]:
+            object_one = bbox_1
+            object_two = bbox_2
         else:
-            object_one = coordinates_2
-            object_two = coordinates_1
+            object_one = bbox_2
+            object_two = bbox_1
 
-        condition = (coordinates_1 != coordinates_2
-                     and ((coordinates_1[4] == "image"
-                           and coordinates_2[4] == "image"
+        condition = (bbox_1 != bbox_2
+                     and ((bbox_1[4] == "image"
+                           and bbox_2[4] == "image"
                            and round(y_min_difference, 2) <= self.Y_MIN_THESHOLD
                            and round(x_diff, 2) <= self.X_THRESHOLD)
                           or self.horizontal_inclusive(object_one, object_two)
                           )
                      )
 
-        object_one, object_two = self.get_greater_object(coordinates_1,
-                                                         coordinates_2,
+        object_one, object_two = self.get_greater_object(bbox_1,
+                                                         bbox_2,
                                                          min_way=1, max_way=3)
         x_way_overlap = (
             object_one[1] <= object_two[1] <= object_one[3]
             or object_one[1] <= object_two[3] <= object_one[3])
-        object_one, object_two = self.get_greater_object(coordinates_1,
-                                                         coordinates_2,
+        object_one, object_two = self.get_greater_object(bbox_1,
+                                                         bbox_2,
                                                          min_way=0, max_way=2)
         y_way_overlap = (
             object_one[0] <= object_two[0] <= object_one[2]
             or object_one[0] <= object_two[2] <= object_one[2])
-        intersection = self.collect_properties.find_iou(coordinates_1,
-                                                        coordinates_2,
-                                                        columns_group=True)
-        if intersection[0] and coordinates_1 != coordinates_2:
+        intersection = bbox_utils.find_iou(bbox_1, bbox_2, columns_group=True)
+        if intersection[0] and bbox_1 != bbox_2:
             if x_way_overlap and y_way_overlap:
                 x_way_overlap_distance = intersection[1]
                 y_way_overlap_distance = intersection[2]
                 condition = self.check_overlap_ties(
-                    coordinates_1, coordinates_2, x_way_overlap_distance,
+                    bbox_1, bbox_2, x_way_overlap_distance,
                     y_way_overlap_distance)
             else:
                 condition = condition and y_way_overlap
@@ -446,25 +444,25 @@ class ChoicesetGrouping(GroupObjects):
     def __init__(self, card_arrange):
         self.card_arrange = card_arrange
 
-    def choiceset_condition(self, coordinates_1: List,
-                            coordinates_2: List) -> bool:
+    def choiceset_condition(self, bbox_1: List,
+                            bbox_2: List) -> bool:
         """
         Returns a boolean value to group the radiobutton objects into a
         choice-set.
-        @param coordinates_1: radiobutton object one coordinates
-        @param coordinates_2: radiobutton object two coordinates
+        @param bbox_1: radiobutton object one coordinates
+        @param bbox_2: radiobutton object two coordinates
         @return: boolean value
         """
-        y_min_difference = abs(coordinates_1[1] - coordinates_2[1])
+        y_min_difference = abs(bbox_1[1] - bbox_2[1])
 
-        if coordinates_1[1] < coordinates_2[1]:
-            y_min_difference = y_min_difference / (abs(coordinates_1[1] -
-                                                       coordinates_2[3]))
+        if bbox_1[1] < bbox_2[1]:
+            y_min_difference = y_min_difference / (abs(bbox_1[1] -
+                                                       bbox_2[3]))
         else:
             y_min_difference = y_min_difference / (
-                abs(coordinates_2[1] - coordinates_1[3]))
-        y_diff = self.max_min_difference(coordinates_1,
-                                         coordinates_2,
+                abs(bbox_2[1] - bbox_1[3]))
+        y_diff = self.max_min_difference(bbox_1,
+                                         bbox_2,
                                          min_way=1, max_way=3)
 
         return (round(y_diff, 2) <= self.Y_THRESHOLD

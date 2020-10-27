@@ -1,4 +1,5 @@
-"""Module for template json for different design obejcts"""
+"""Maintains the design templates for the different adaptive card design
+element type"""
 from typing import Dict
 
 

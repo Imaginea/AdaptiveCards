@@ -1,7 +1,6 @@
 """Module maintains the needed design and exporting templates and utilities
  for target rendering"""
-from mystique.target_export.adaptive_card_templates import (
-    AdaptiveCardTemplate)
+from mystique.ac_export.adaptive_card_templates import AdaptiveCardTemplate
 
 
 class AcContainerExport:
@@ -9,9 +8,9 @@ class AcContainerExport:
     This class is responsible for calling the appropriate design templates
     for the container structure.
     """
-    def __init__(self, design_object, target_object):
+    def __init__(self, design_object, export_object):
         self.design_object = design_object
-        self.target_object = target_object
+        self.export_object = export_object
 
     def columnset(self, body) -> None:
         """
@@ -23,7 +22,7 @@ class AcContainerExport:
                                   self.design_object.get("object", ""))
         body.append(template_object())
         body = body[-1].get("columns", [])
-        self.target_object.export_card_body(body,
+        self.export_object.export_card_body(body,
                                             self.design_object.get("row", []))
 
     def column(self, body) -> None:
@@ -36,7 +35,7 @@ class AcContainerExport:
                                   self.design_object.get("object", ""))
         body.append(template_object())
         body = body[-1].get("items", [])
-        self.target_object.export_card_body(
+        self.export_object.export_card_body(
             body, self.design_object.get("column", {}).get("items", []))
 
     def imageset(self, body) -> None:
@@ -49,7 +48,7 @@ class AcContainerExport:
                                   self.design_object.get("object", ""))
         body.append(template_object())
         body = body[-1].get("images", [])
-        self.target_object.export_card_body(
+        self.export_object.export_card_body(
             body, self.design_object.get("imageset", {}).get("items", []))
 
     def choiceset(self, body) -> None:
@@ -62,7 +61,7 @@ class AcContainerExport:
                                   self.design_object.get("object", ""))
         body.append(template_object())
         body = body[-1].get("choices", [])
-        self.target_object.export_card_body(
+        self.export_object.export_card_body(
             body, self.design_object.get("choiceset", {}).get("items", []))
 
 
@@ -71,10 +70,10 @@ class TestStringContainersExport:
     This class is responsible for calling the appropriate testing templates
     for the container structure.
     """
-    def __init__(self, design_object, final_data_structure, target_object):
+    def __init__(self, design_object, final_data_structure, export_object):
         self.design_object = design_object
         self.final_data_structure = final_data_structure
-        self.target_object = target_object
+        self.export_object = export_object
 
     def columnset(self, testing_string, indentation) -> None:
         """
@@ -89,7 +88,7 @@ class TestStringContainersExport:
             tab_space = "\t" * (indentation + 1)
             indentation = indentation + 1
         testing_string.append(f"{tab_space}row\n")
-        self.target_object.export_debug_string(
+        self.export_object.export_debug_string(
             testing_string,
             self.design_object.get("row", []),
             indentation=indentation)
@@ -107,7 +106,7 @@ class TestStringContainersExport:
             tab_space = "\t" * (indentation + 1)
             indentation = indentation + 1
         testing_string.append(f"{tab_space}column\n")
-        self.target_object.export_debug_string(
+        self.export_object.export_debug_string(
             testing_string,
             self.design_object.get("column", {}).get("items", []),
             indentation=indentation)
@@ -125,7 +124,7 @@ class TestStringContainersExport:
             tab_space = "\t" * (indentation + 1)
             indentation = indentation + 1
         testing_string.append(f"{tab_space}imageset\n")
-        self.target_object.export_debug_string(
+        self.export_object.export_debug_string(
             testing_string,
             self.design_object.get("imageset", {}).get("items", []),
             indentation=indentation)
@@ -143,7 +142,7 @@ class TestStringContainersExport:
             tab_space = "\t" * (indentation + 1)
             indentation = indentation + 1
         testing_string.append(f"{tab_space}choiceset\n")
-        self.target_object.export_debug_string(
+        self.export_object.export_debug_string(
             testing_string,
             self.design_object.get("choiceset", {}).get("items", []),
             indentation=indentation)

@@ -6,22 +6,23 @@ import json
 import os
 import uuid
 from multiprocessing import Process, Queue
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import cv2
 import numpy as np
 import requests
 from PIL import Image
 from mystique import config
-from mystique.ds_layout.arrange_card import CardArrange
-from mystique.target_export.card_template import DataBinding
-from mystique.target_export.adaptive_card_export import (
+from mystique.card_layout.arrange_card import CardArrange
+from mystique.ac_export.card_template_data import DataBinding
+from mystique.ac_export.adaptive_card_export import (
     AdaptiveCardExport)
 from mystique.extract_properties import CollectProperties, ContainerProperties
 from mystique.image_extraction import ImageExtraction
 from mystique.utils import get_property_method
-from mystique.ds_layout.row_column_group import RowColumnGroup
-from mystique.ds_layout.other_container_group import OtherContainersGroup
+from mystique.card_layout.row_column_group import RowColumnGroup
+from mystique.card_layout.container_group import ContainerGroup
+from mystique.card_layout import bbox_utils
 
 
 class PredictCard:
@@ -159,10 +160,10 @@ class PredictCard:
         """
         layout_structure = []
         row_column_group = RowColumnGroup()
-        row_column_group.column_set_container_grouping(json_objects,
+        row_column_group.row_column_grouping(json_objects,
                                                        layout_structure)
-        other_container_group = OtherContainersGroup()
-        layout_structure = other_container_group.other_containers_grouping(
+        container_group = ContainerGroup()
+        layout_structure = container_group.containers_grouping(
             layout_structure)
         if queue:
             queue.put(layout_structure)
@@ -185,7 +186,8 @@ class PredictCard:
         body = export_card.build_adaptive_card(layout_data_structure)
         return body
 
-    def new_layout_generation(self, json_objects: Dict, image: Image) -> None:
+    def new_layout_generation(self, json_objects: Dict,
+                              image: Image) -> Union[List, None]:
         """
         Performs the property extraction and hierarchical layout structuring
         in parallel and merges both on completion to export it to the adaptive
@@ -231,8 +233,7 @@ class PredictCard:
         json_objects, detected_coords = self.collect_objects(
             output_dict=prediction, pil_image=image)
         # Remove overlapping rcnn objects
-        card_arrange = CardArrange()
-        card_arrange.remove_noise_objects(json_objects)
+        bbox_utils.remove_noise_objects(json_objects)
 
         # The property extraction happens sequentially only if the
         # NEW_LAYOUT_STRUCTURE is not enabled
@@ -260,6 +261,7 @@ class PredictCard:
         if config.NEW_LAYOUT_STRUCTURE:
             body = self.new_layout_generation(json_objects, image)
         else:
+            card_arrange = CardArrange()
             body, ymins = card_arrange.build_card_json(
                 objects=json_objects.get("objects", []), image=image)
             # Sort the elements vertically
