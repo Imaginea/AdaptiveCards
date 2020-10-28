@@ -15,7 +15,7 @@ from PIL import Image
 from mystique import config
 from mystique.card_layout.arrange_card import CardArrange
 from mystique.ac_export.card_template_data import DataBinding
-from mystique.extract_properties import CollectProperties, ContainerProperties
+from mystique.extract_properties import CollectProperties
 from mystique.image_extraction import ImageExtraction
 from mystique.utils import get_property_method
 from mystique.card_layout import row_column_group
