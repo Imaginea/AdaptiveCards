@@ -299,10 +299,10 @@ class RowColumnGrouping(GroupObjects):
         y_diff = self.max_min_difference(bbox_1, bbox_2,
                                          min_way=1, max_way=3)
         y_min_difference = abs(bbox_1[1] - bbox_2[1])
-        object_one, object_two = self.get_greater_object(bbox_1,
-                                                         bbox_2,
-                                                         min_way=1,
-                                                         max_way=3)
+        object_one, object_two = self._get_highest_range_object(bbox_1,
+                                                                bbox_2,
+                                                                min_way=1,
+                                                                max_way=3)
         y_min_difference = y_min_difference / (
             abs(object_two[1] - object_one[3]))
 
@@ -328,8 +328,9 @@ class RowColumnGrouping(GroupObjects):
                 and self.horizontal_inclusive(object_one, object_two)
                 )))
 
-    def get_greater_object(self, bbox_1: List, bbox_2: List,
-                           min_way: int, max_way: int) -> Tuple[List, List]:
+    def _get_highest_range_object(self, bbox_1: List, bbox_2: List,
+                                  min_way: int,
+                                  max_way: int) -> Tuple[List, List]:
         """
         Returns the (greater, lesser) design objects based on the given x or y
         range
@@ -358,13 +359,15 @@ class RowColumnGrouping(GroupObjects):
         @param y_way_overlap_distance: overlapping region's height
         @return: a boolean value
         """
-        object_one, object_two = self.get_greater_object(bbox_1,
-                                                         bbox_2,
-                                                         min_way=0, max_way=2)
+        object_one, object_two = self._get_highest_range_object(bbox_1,
+                                                                bbox_2,
+                                                                min_way=0,
+                                                                max_way=2)
         width = abs(object_one[2] - object_one[0])
-        object_one, object_two = self.get_greater_object(bbox_1,
-                                                         bbox_2,
-                                                         min_way=1, max_way=3)
+        object_one, object_two = self._get_highest_range_object(bbox_1,
+                                                                bbox_2,
+                                                                min_way=1,
+                                                                max_way=3)
         height = abs(object_one[3] - object_one[1])
 
         if x_way_overlap_distance / width >= y_way_overlap_distance / height:
@@ -383,9 +386,10 @@ class RowColumnGrouping(GroupObjects):
                                          min_way=0, max_way=2)
         y_min_difference = abs(bbox_1[1] - bbox_2[1])
 
-        object_one, object_two = self.get_greater_object(bbox_1,
-                                                         bbox_2,
-                                                         min_way=1, max_way=3)
+        object_one, object_two = self._get_highest_range_object(bbox_1,
+                                                                bbox_2,
+                                                                min_way=1,
+                                                                max_way=3)
         y_min_difference = y_min_difference / (
             abs(object_two[1] - object_one[3]))
 
@@ -405,15 +409,17 @@ class RowColumnGrouping(GroupObjects):
                           )
                      )
 
-        object_one, object_two = self.get_greater_object(bbox_1,
-                                                         bbox_2,
-                                                         min_way=1, max_way=3)
+        object_one, object_two = self._get_highest_range_object(bbox_1,
+                                                                bbox_2,
+                                                                min_way=1,
+                                                                max_way=3)
         x_way_overlap = (
             object_one[1] <= object_two[1] <= object_one[3]
             or object_one[1] <= object_two[3] <= object_one[3])
-        object_one, object_two = self.get_greater_object(bbox_1,
-                                                         bbox_2,
-                                                         min_way=0, max_way=2)
+        object_one, object_two = self._get_highest_range_object(bbox_1,
+                                                                bbox_2,
+                                                                min_way=0,
+                                                                max_way=2)
         y_way_overlap = (
             object_one[0] <= object_two[0] <= object_one[2]
             or object_one[0] <= object_two[2] <= object_one[2])

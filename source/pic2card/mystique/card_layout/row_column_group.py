@@ -2,9 +2,26 @@
 respective columns"""
 from typing import List, Dict
 
-from mystique.card_layout.objects_group import RowColumnGrouping
-from mystique.card_layout.ds_templates import DsTemplate
 from mystique.extract_properties import CollectProperties
+
+from .container_group import ContainerGroup
+from .objects_group import RowColumnGrouping
+from .ds_helper import DsHelper
+
+
+def generate_card_layout(json_objects: List) -> List[Dict]:
+    """
+    Calls the respective layout merging methods and returns the
+    hierarchical layout structure.
+    @param json_objects: List of predicted design elements from the model
+    @return: generated card layout
+    """
+    card_layout = []
+    row_column_group = RowColumnGroup()
+    row_column_group.row_column_grouping(json_objects, card_layout)
+    container_group = ContainerGroup()
+    card_layout = container_group.merge_items(card_layout)
+    return card_layout
 
 
 class RowColumnGroup:
@@ -17,9 +34,10 @@ class RowColumnGroup:
 
     def __init__(self):
         self.collect_properties = CollectProperties()
+        self.ds_helper = DsHelper()
 
-    def check_same_iteration(self, previous: List[Dict],
-                             current: List[Dict]) -> bool:
+    def _check_same_iteration(self, previous: List[Dict],
+                              current: List[Dict]) -> bool:
         """
         Checks the if the previous and current grouped column have same
         objects or not.
@@ -37,7 +55,7 @@ class RowColumnGroup:
         return same
 
     def row_column_grouping(self, design_objects,
-                            layout_data_structure:
+                            card_layout:
                             List[Dict],
                             previous_column=None
                             ) -> None:
@@ -46,37 +64,37 @@ class RowColumnGroup:
         into columns and column_sets and individual objects, considering each
         columns as smallest unit [i.e. a separate card hierarchy].
         @param design_objects: list of detected design objects
-        @param layout_data_structure: layout data structure
+        @param card_layout: layout data structure
         @param previous_column: previous grouped column objects to check for
                                 same grouping happening repeatedly
         """
         columns_grouping = RowColumnGrouping()
         column_sets = columns_grouping.object_grouping(
             design_objects, columns_grouping.row_condition)
-        ds_template = DsTemplate()
+        ds_template = DsHelper()
         for column_set in column_sets:
             if len(column_set) == 1:
-                ds_template.add_element_to_ds("item", layout_data_structure,
+                ds_template.add_element_to_ds("item", card_layout,
                                               element=column_set[0])
             if len(column_set) > 1:
                 columns = columns_grouping.object_grouping(
                     column_set, columns_grouping.column_condition)
-                ds_template.add_element_to_ds("row", layout_data_structure)
-                row_counter = len(layout_data_structure) - 1
+                ds_template.add_element_to_ds("row", card_layout)
+                row_counter = len(card_layout) - 1
                 for column in columns:
                     if len(column) == 1:
-                        row_columns = layout_data_structure[row_counter]["row"]
+                        row_columns = card_layout[row_counter]["row"]
                         ds_template.add_element_to_ds("column", row_columns)
                         ds_template.add_element_to_ds(
                             "item",
                             row_columns[-1]["column"]["items"],
                             element=column[0])
-                        layout_data_structure[row_counter]["row"][-1][
+                        card_layout[row_counter]["row"][-1][
                             "coordinates"] = column[0].get("coords")
                     else:
-                        row_columns = layout_data_structure[row_counter]["row"]
-                        if not self.check_same_iteration(previous_column,
-                                                         column):
+                        row_columns = card_layout[row_counter]["row"]
+                        if not self._check_same_iteration(previous_column,
+                                                          column):
                             ds_template.add_element_to_ds("column", row_columns)
                             column_counter = len(row_columns) - 1
                             self.row_column_grouping(
@@ -84,7 +102,7 @@ class RowColumnGroup:
                                 row_columns[column_counter]["column"]["items"],
                                 previous_column=column)
                             if self.same_iteration:
-                                layout_data_structure[row_counter][
+                                card_layout[row_counter][
                                     "row"][column_counter]["column"][
                                         "items"] = row_columns[column_counter][
                                             "column"]["items"][:-1]
@@ -98,45 +116,40 @@ class RowColumnGroup:
                                 self.same_iteration = False
 
                             coordinates = [c.get("coordinates") for c in
-                                           row_columns[column_counter][
-                                               "column"]["items"]
-                                           ]
-                            layout_data_structure[row_counter]["row"][
-                                column_counter]["coordinates"] = \
+                                           row_columns[column_counter]["column"]
+                                           ["items"]]
+                            card_layout[row_counter]["row"][column_counter][
+                                "coordinates"] = \
                                 ds_template.build_container_coordinates(
                                     coordinates)
 
                             column_y_minimums = [c.get("coordinates")[1]
                                                  for c in row_columns[
-                                                     column_counter][
-                                                         "column"]["items"]]
+                                                     column_counter]["column"]
+                                                 ["items"]]
 
-                            layout_data_structure[row_counter]["row"][
+                            card_layout[row_counter]["row"][
                                 column_counter]["column"]["items"] = [
                                     value for _, value in sorted(
                                         zip(column_y_minimums,
-                                            layout_data_structure[
-                                                row_counter]["row"][
-                                                    column_counter][
-                                                        "column"]["items"]),
+                                            card_layout[row_counter]["row"][
+                                                column_counter]["column"]
+                                            ["items"]),
                                         key=lambda value: value[0])]
                         else:
                             self.same_iteration = True
 
                     if not self.same_iteration:
                         coordinates = [c.get("coordinates") for c in
-                                       layout_data_structure[row_counter]["row"]
-                                       ]
-                        layout_data_structure[row_counter]["coordinates"] = \
+                                       card_layout[row_counter]["row"]]
+                        card_layout[row_counter]["coordinates"] = \
                             ds_template.build_container_coordinates(
                                 coordinates)
-                        row_counter = len(layout_data_structure) - 1
+                        row_counter = len(card_layout) - 1
                         row_x_minimums = [c.get("coordinates")[0] for c in
-                                          layout_data_structure[row_counter][
-                                              "row"]]
-                        layout_data_structure[row_counter]["row"] = [
+                                          card_layout[row_counter]["row"]]
+                        card_layout[row_counter]["row"] = [
                             value for _, value in sorted(
                                 zip(row_x_minimums,
-                                    layout_data_structure[
-                                        row_counter]["row"]),
+                                    card_layout[row_counter]["row"]),
                                 key=lambda value: value[0])]

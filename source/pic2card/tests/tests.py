@@ -17,6 +17,7 @@ from mystique.ac_export.adaptive_card_export import (
 from mystique.card_layout.objects_group import (RowColumnGrouping,
                                                 ImageGrouping,
                                                 ChoicesetGrouping)
+from mystique.card_layout.ds_helper import DsHelper
 from tests.test_variables import (debug_string_test, test_img_obj1,
                                   test_img_obj2, test_cset_obj1,
                                   test_cset_obj2)
@@ -155,9 +156,10 @@ class TestLayoutStructure(BaseSetUpClass):
         Tests the adaptive card builded using the testing Format
         for the given test image
         """
-        final_ds = self.model_instance.layout_generation(
+        final_ds = self.model_instance.card_layout_generation(
             self.json_objects['objects'], self.test_queue)
-        debug_string = self.export_card.build_testing_format(final_ds)
+        ds_helper = DsHelper()
+        debug_string = ds_helper.build_testing_format(final_ds)
         card_json = self.export_card.build_adaptive_card(final_ds)
         self.assertEqual(debug_string, debug_string_test)
         self.assertEqual(len(final_ds), len(card_json))

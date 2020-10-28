@@ -15,14 +15,12 @@ from PIL import Image
 from mystique import config
 from mystique.card_layout.arrange_card import CardArrange
 from mystique.ac_export.card_template_data import DataBinding
-from mystique.ac_export.adaptive_card_export import (
-    AdaptiveCardExport)
 from mystique.extract_properties import CollectProperties, ContainerProperties
 from mystique.image_extraction import ImageExtraction
 from mystique.utils import get_property_method
-from mystique.card_layout.row_column_group import RowColumnGroup
-from mystique.card_layout.container_group import ContainerGroup
+from mystique.card_layout import row_column_group
 from mystique.card_layout import bbox_utils
+from mystique.ac_export import adaptive_card_export
 
 
 class PredictCard:
@@ -53,7 +51,6 @@ class PredictCard:
         r, c = boxes.shape
         detected_coords = []
         json_object = {}.fromkeys(["objects"], [])
-        width, height = pil_image.size
         for i in range(r):
             if scores[i] * 100 >= config.MODEL_CONFIDENCE:
                 object_json = dict().fromkeys(
@@ -151,40 +148,18 @@ class PredictCard:
                                   image, image_np, card_format)
         return card
 
-    def layout_generation(self, json_objects: List, queue: Queue) -> List[Dict]:
+    def card_layout_generation(self, json_objects: List,
+                               queue: Queue) -> List[Dict]:
         """
         Returns the generated hierarchical layout structure.
         @param json_objects: extracted list of design objects
         @param queue: Queue object of the calling process
         @return: Generated layout structure
         """
-        layout_structure = []
-        row_column_group = RowColumnGroup()
-        row_column_group.row_column_grouping(json_objects,
-                                             layout_structure)
-        container_group = ContainerGroup()
-        layout_structure = container_group.containers_grouping(
-            layout_structure)
+        card_layout = row_column_group.generate_card_layout(json_objects)
         if queue:
-            queue.put(layout_structure)
-        return layout_structure
-
-    def export_to_card(self, layout_data_structure: List[Dict],
-                       properties, pil_image) -> List:
-        """
-        Returns the exported adaptive card design body.
-        @param layout_data_structure: Generated hierarchical layout structure.
-        @param properties: List of design object with properties extracted.
-        @param pil_image: Input design image
-        @return: Exported adaptive card json body
-        """
-        export_card = AdaptiveCardExport()
-        export_card.merge_properties(properties, layout_data_structure)
-        container_properties = ContainerProperties(pil_image=pil_image)
-        layout_data_structure = container_properties.get_container_properties(
-            layout_data_structure, pil_image)
-        body = export_card.build_adaptive_card(layout_data_structure)
-        return body
+            queue.put(card_layout)
+        return card_layout
 
     def new_layout_generation(self, json_objects: Dict,
                               image: Image) -> Union[List, None]:
@@ -202,17 +177,18 @@ class PredictCard:
         try:
             process1 = Process(target=self.get_object_properties, args=(
                 json_objects["objects"], image, queue1,))
-            process2 = Process(target=self.layout_generation,
+            process2 = Process(target=self.card_layout_generation,
                                args=(json_objects["objects"], queue2,))
             process1.start()
             process2.start()
 
             properties = queue1.get()
-            layout_structure = queue2.get()
+            card_layout = queue2.get()
 
             process1.join()
             process2.join()
-            return self.export_to_card(layout_structure, properties, image)
+            return adaptive_card_export.export_to_card(card_layout,
+                                                       properties, image)
         except Exception:
             return None
 

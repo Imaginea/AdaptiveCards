@@ -6,9 +6,9 @@ from mystique import default_host_configs
 from mystique.ac_export.adaptive_card_templates import (
     AdaptiveCardTemplate)
 from mystique.extract_properties import CollectProperties, ContainerProperties
-from mystique.card_layout.objects_group import ChoicesetGrouping
-from mystique.card_layout.objects_group import RowColumnGrouping
-from mystique.card_layout.objects_group import ImageGrouping
+from .objects_group import ChoicesetGrouping
+from .objects_group import RowColumnGrouping
+from .objects_group import ImageGrouping
 
 
 class CardArrange:
@@ -23,6 +23,7 @@ class CardArrange:
     """
     column_coords = [[]] * 4
     column_coords_min = [[]] * 4
+    object_template = AdaptiveCardTemplate()
 
     def append_image_objects(self, image_urls=None, image_coords=None,
                              pil_image=None, json_object=None,
@@ -90,9 +91,9 @@ class CardArrange:
         @param body: list of design elements
         @param ymins: list of ymin of design elements
         """
-        object_template = AdaptiveCardTemplate(design_object)
-        template_object = getattr(object_template, design_object.get("object"))
-        body.append(template_object())
+        template_object = getattr(self.object_template,
+                                  design_object.get("object"))
+        body.append(template_object(design_object))
         if ymins is not None:
             ymins.append(design_object.get("ymin"))
 
