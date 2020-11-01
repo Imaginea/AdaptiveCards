@@ -159,7 +159,7 @@ class TestLayoutStructure(BaseSetUpClass):
         final_ds = self.model_instance.card_layout_generation(
             self.json_objects['objects'], self.test_queue)
         ds_helper = DsHelper()
-        debug_string = ds_helper.build_testing_format(final_ds)
+        debug_string = ds_helper.build_serialized_layout_string(final_ds)
         card_json = self.export_card.build_adaptive_card(final_ds)
         self.assertEqual(debug_string, debug_string_test)
         self.assertEqual(len(final_ds), len(card_json))

@@ -14,46 +14,80 @@ class DsHelper:
 
     def __init__(self):
         self.containers = ['columnset', 'column', 'imageset', 'choiceset']
-        self.test_card_layout = []
+        self.merging_containers_list = ['imageset', 'choiceset']
+        self.serialized_layout = []
         self.ds_template = DsDesignTemplate()
 
-    def export_debug_string(self, test_card_layout: List,
+    def merge_properties(self,
+                         properties: List[Dict],
+                         design_object: List[Dict],
+                         container_details_object: object
+                         ) -> None:
+        """
+        Merges the design objects with properties with the appropriate layout
+        structure with the help of the uuid.
+        @param properties: design objects with properties
+        @param design_object: layout data structure
+        @param container_details_object: ContainerDetailsTemplate object
+        """
+        if (isinstance(design_object, dict) and
+                design_object.get("object", "") not in self.containers):
+            extracted_properties = [prop for prop in properties
+                                    if prop.get("uuid", "") ==
+                                    design_object.get("uuid")][0]
+            extracted_properties.pop("coords")
+            design_object.update(extracted_properties)
+
+        elif isinstance(design_object, list):
+            for design_obj in design_object:
+                self.merge_properties(properties, design_obj,
+                                      container_details_object)
+        else:
+            container_details_template_object = getattr(
+                container_details_object, design_object.get("object", ""))
+            self.merge_properties(
+                properties,
+                container_details_template_object(design_object),
+                container_details_object)
+
+    def export_debug_string(self, serialized_layout: List,
                             design_object: Union[List, Dict],
                             card_layout: List[Dict],
                             indentation=None) -> None:
         """
-        Recursively generates the testing layout structure string.
-        @param test_card_layout: testing layout structure string
+        Recursively generates the debug layout structure string.
+        @param serialized_layout: debug layout structure string
         @param design_object: design objects from the layout structure
         @param indentation: indentation
         @param card_layout: generated layout structure
         """
         if (isinstance(design_object, dict) and
-                design_object.get("object", "") not in DsHelper().containers):
+                design_object.get("object", "") not in self.containers):
             design_class = design_object.get("class", "")
             if design_object in card_layout:
                 tab_space = "\t" * 0
             else:
                 tab_space = "\t" * (indentation + 1)
-            test_card_layout.append(f"{tab_space}item({design_class})\n")
+            serialized_layout.append(f"{tab_space}item({design_class})\n")
         elif isinstance(design_object, list):
             for design_obj in design_object:
-                self.export_debug_string(test_card_layout, design_obj,
+                self.export_debug_string(serialized_layout, design_obj,
                                          card_layout,
                                          indentation=indentation)
         else:
-            export_testing_string_template = TestStringContainersExport(
+            export_serialized_layout_template = SerializedLayoutExport(
                 design_object, card_layout, self)
-            export_testing_string_template_object = getattr(
-                export_testing_string_template,
+            export_serialized_layout_template_object = getattr(
+                export_serialized_layout_template,
                 design_object.get("object", ""))
-            export_testing_string_template_object(test_card_layout, indentation)
+            export_serialized_layout_template_object(serialized_layout,
+                                                     indentation)
 
-    def build_testing_format(self, card_layout: List[Dict]) -> List:
+    def build_serialized_layout_string(self, card_layout: List[Dict]) -> List:
         """
         Returns the exported adaptive card json
         @param card_layout: adaptive card body
-        @return: testing data-structure format
+        @return: debugging data-structure format
         """
         y_minimum_final = [c.get("coordinates")[1] for c in
                            card_layout]
@@ -61,12 +95,12 @@ class DsHelper:
                                                         card_layout),
                                                     key=lambda value: value[0])]
 
-        self.export_debug_string(self.test_card_layout,
+        self.export_debug_string(self.serialized_layout,
                                  card_layout,
                                  card_layout,
                                  indentation=0)
 
-        return self.test_card_layout
+        return self.serialized_layout
 
     def add_element_to_ds(self, element_type: str, card_layout: List,
                           element=None) -> None:
@@ -101,9 +135,9 @@ class DsHelper:
                 max(y_maximums))
 
 
-class TestStringContainersExport:
+class SerializedLayoutExport:
     """
-    This class is responsible for calling the appropriate testing templates
+    This class is responsible for calling the appropriate debug templates
     for the container structure.
     """
     def __init__(self, design_object, card_layout, export_object):
@@ -111,77 +145,77 @@ class TestStringContainersExport:
         self.card_layout = card_layout
         self.export_object = export_object
 
-    def columnset(self, testing_string, indentation) -> None:
+    def columnset(self, serialized_layout_string, indentation) -> None:
         """
-        Returns the testing string for the column-set container
-        @param testing_string: list of testing string for the given design
-        @param indentation: needed indentation for design element in the
-                            testing string
+        Returns the debugging string for the column-set container @param
+        serialized_layout_string: list of debugging string for the given
+        design @param indentation: needed indentation for design element in
+        the debugging string
         """
         if self.design_object in self.card_layout:
             tab_space = "\t" * 0
         else:
             tab_space = "\t" * (indentation + 1)
             indentation = indentation + 1
-        testing_string.append(f"{tab_space}row\n")
+        serialized_layout_string.append(f"{tab_space}row\n")
         self.export_object.export_debug_string(
-            testing_string,
+            serialized_layout_string,
             self.design_object.get("row", []),
             self.card_layout,
             indentation=indentation)
 
-    def column(self, testing_string, indentation) -> None:
+    def column(self, serialized_layout_string, indentation) -> None:
         """
-        Returns the testing string for the column container
-        @param testing_string: list of testing string for the given design
-        @param indentation: needed indentation for design element in the
-                            testing string
+        Returns the debugging string for the column container @param
+        serialized_layout_string: list of debugging string for the given
+        design @param indentation: needed indentation for design element in
+        the debugging string
         """
         if self.design_object in self.card_layout:
             tab_space = "\t" * 0
         else:
             tab_space = "\t" * (indentation + 1)
             indentation = indentation + 1
-        testing_string.append(f"{tab_space}column\n")
+        serialized_layout_string.append(f"{tab_space}column\n")
         self.export_object.export_debug_string(
-            testing_string,
+            serialized_layout_string,
             self.design_object.get("column", {}).get("items", []),
             self.card_layout,
             indentation=indentation)
 
-    def imageset(self, testing_string, indentation) -> None:
+    def imageset(self, serialized_layout_string, indentation) -> None:
         """
-        Returns the testing string for the image-set container
-        @param testing_string: list of testing string for the given design
-        @param indentation: needed indentation for design element in the
-                            testing string
+        Returns the debugging string for the image-set container @param
+        serialized_layout_string: list of debugging string for the given
+        design @param indentation: needed indentation for design element in
+        the debugging string
         """
         if self.design_object in self.card_layout:
             tab_space = "\t" * 0
         else:
             tab_space = "\t" * (indentation + 1)
             indentation = indentation + 1
-        testing_string.append(f"{tab_space}imageset\n")
+        serialized_layout_string.append(f"{tab_space}imageset\n")
         self.export_object.export_debug_string(
-            testing_string,
+            serialized_layout_string,
             self.design_object.get("imageset", {}).get("items", []),
             indentation=indentation)
 
-    def choiceset(self, testing_string, indentation) -> None:
+    def choiceset(self, serialized_layout_string, indentation) -> None:
         """
-        Returns the testing string for the image-set container
-        @param testing_string: list of testing string for the given design
-        @param indentation: needed indentation for design element in the
-                            testing string
+        Returns the debugging string for the image-set container @param
+        serialized_layout_string: list of debugging string for the given
+        design @param indentation: needed indentation for design element in
+        the debugging string
         """
         if self.design_object in self.card_layout:
             tab_space = "\t" * 0
         else:
             tab_space = "\t" * (indentation + 1)
             indentation = indentation + 1
-        testing_string.append(f"{tab_space}choiceset\n")
+        serialized_layout_string.append(f"{tab_space}choiceset\n")
         self.export_object.export_debug_string(
-            testing_string,
+            serialized_layout_string,
             self.design_object.get("choiceset", {}).get("items", []),
             indentation=indentation)
 

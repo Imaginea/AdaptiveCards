@@ -132,7 +132,9 @@ class AdaptiveCardTemplate:
         """
         return {
             "type": "ColumnSet",
-            "columns": []
+            "columns": [],
+            "horizontalAlignment": design_object.get(
+                "horizontal_alignment", "")
         }
 
     def column(self, design_object: Dict) -> Dict:
@@ -146,7 +148,9 @@ class AdaptiveCardTemplate:
             "width": design_object.get(
                 "width", ""),
 
-            "items": []
+            "items": [],
+            "horizontalAlignment": design_object.get(
+                "horizontal_alignment", "")
         }
 
     def imageset(self, design_object: Dict) -> Dict:
@@ -158,7 +162,9 @@ class AdaptiveCardTemplate:
         return {
             "type": "ImageSet",
             "imageSize": design_object.get("size", ""),
-            "images": []
+            "images": [],
+            "horizontalAlignment": design_object.get(
+                "horizontal_alignment", "")
         }
 
     def choiceset(self, design_object: Dict) -> Dict:
@@ -170,5 +176,7 @@ class AdaptiveCardTemplate:
         return {
             "type": "Input.ChoiceSet",
             "choices": [],
-            "style": "expanded"
+            "style": "expanded",
+            "horizontalAlignment": design_object.get(
+                "horizontal_alignment", "")
         }

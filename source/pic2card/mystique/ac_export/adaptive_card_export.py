@@ -7,9 +7,9 @@ from PIL import Image
 from mystique.card_layout.ds_helper import (DsHelper,
                                             ContainerDetailTemplate)
 from mystique.extract_properties import ContainerProperties
+from mystique.card_layout import property_updates
 from .adaptive_card_templates import AdaptiveCardTemplate
 from .export_helper import AcContainerExport
-from . import export_helper
 
 
 def export_to_card(card_layout: List[Dict], properties: List,
@@ -23,11 +23,18 @@ def export_to_card(card_layout: List[Dict], properties: List,
     """
     export_card = AdaptiveCardExport()
     container_details_object = ContainerDetailTemplate()
-    export_helper.merge_properties(properties, card_layout,
-                                   container_details_object)
+    ds_helper_object = DsHelper()
+    # merge the properties and the layout ds
+    ds_helper_object.merge_properties(properties, card_layout,
+                                      container_details_object)
+    # update the extracted properties
+    card_layout = property_updates.update_properties(
+        card_layout, container_details_object, pil_image)
+    # extract the general container's properties
     container_properties = ContainerProperties(pil_image=pil_image)
     card_layout = container_properties.get_container_properties(
         card_layout, pil_image, container_details_object)
+    # convert it to adaptive card format
     body = export_card.build_adaptive_card(card_layout)
     return body
 

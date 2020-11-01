@@ -24,7 +24,8 @@ class BaseExtractProperties(AbstractBaseExtractProperties):
     """
     Base Class for all design objects's common properties extraction.
     """
-    def get_alignment(self, image: Image, xmin: float, xmax: float) -> str:
+    def get_alignment(self, image=None, xmin=None, xmax=None,
+                      width=None) -> Union[str, None]:
         """
         Get the horizontal alignment of the elements by defining a
         ratio based on the xmin and xmax center of each object.
@@ -36,20 +37,40 @@ class BaseExtractProperties(AbstractBaseExtractProperties):
         @param xmin: xmin of the object detected
         @param xmax: xmax of the object detected
         @return: position string[Left/Right/Center]
+        @param width: width of the design element's parent container
         """
         avg = math.ceil((xmin + xmax) / 2)
-        w, h = image.size
-        #  if an object lies within the 15% of the start of the image then the
-        #  object is considered as left by default [to avoid any lengthy
-        # textbox coming into center when considering the xmin and xmax center]
-        left_range = (w * 15) / 100
-        if math.floor(xmin) <= math.ceil(left_range) or abs(
-                xmin - left_range) < 10:
-            return "Left"
+        if not width:
+            width, height = image.size
 
-        if 0 <= (avg / w) * 100 < 45:
+        left_range = config.ALIGNMENT_THRESHOLDS.get("left_range")
+        center_range = config.ALIGNMENT_THRESHOLDS.get("center_range")
+        #  if an object lies within the min and max range of the start or end
+        #  of the parent coordinates then the object is considered as [left
+        #  / right] by default [ for example :to avoid any lengthy textbox
+        #  coming into center when considering the xmin and xmax center]
+        min_range = (width *
+                     config.ALIGNMENT_THRESHOLDS.get("minimum_range"))
+        max_range = (width *
+                     config.ALIGNMENT_THRESHOLDS.get("maximum_range"))
+
+        left_min_condition = math.floor(xmin) <= math.ceil(min_range)
+
+        right_min_condition = math.floor(xmax) >= math.ceil(max_range)
+
+        if image:
+            if left_min_condition:
+                return "Left"
+        if not image:
+            if left_min_condition and not right_min_condition:
+                return "Left"
+            if right_min_condition and not left_min_condition:
+                return "Right"
+            if left_min_condition and right_min_condition:
+                return None
+        if left_range[0] <= (avg / width) < left_range[1]:
             return "Left"
-        elif 45 <= (avg / w) * 100 < 55:
+        elif center_range[0] <= (avg / width) < center_range[1]:
             return "Center"
         else:
             return "Right"
@@ -456,17 +477,45 @@ class ContainerProperties:
         mid_point2 = np.asarray(((point2[0] + point2[2]) / 2,
                                  (point2[1] + point2[3]) / 2))
 
-        end_point1 = np.asarray((point1[0], point1[1]))
-        end_point2 = np.asarray((point2[2], point2[3]))
+        if config.NEW_LAYOUT_STRUCTURE:
+            end_point1 = np.asarray(
+                (min(point1[0], point2[0]), min(point1[1], point2[1])))
+            end_point2 = np.asarray(
+                (max(point1[2], point2[2]), max(point1[3], point2[3])))
+        else:
+            end_point1 = np.asarray((point1[0], point1[1]))
+            end_point2 = np.asarray((point2[2], point2[3]))
         end_distance = np.sqrt(np.sum(((end_point1 - end_point2) ** 2)))
         mid_distance = np.sqrt(np.sum(((mid_point1 - mid_point2) ** 2)))
-        mid_distance = (mid_distance / end_distance) * 100
+        mid_distance = (mid_distance / end_distance)
+
         return mid_distance
 
-    def extract_column_width(self, column_set: Dict,
-                             image: Image,
-                             column_coords_max=None,
-                             column_coords_min=None) -> Union[None, Dict]:
+    def change_column_coordinates(self, column: Dict) -> List:
+        """
+        Change/ return the column coordinates for the new layout generation
+        method , if the column has the image-set get the element's
+        coordinates to the coordinates of the 1st image in the image-set.
+        @param column: column layout structure
+        @return: column coordinates
+        """
+        if "imageset" in [list(item.keys())[0]
+                          for item in column.get("column")["items"]]:
+            item_coords = [item["imageset"]["items"][0]["coordinates"]
+                           if item["object"] == "imageset"
+                           else item["coordinates"]
+                           for item in column["column"]["items"]]
+            column_coords = [min([coord[0] for coord in item_coords]),
+                             min([coord[1] for coord in item_coords]),
+                             max([coord[2] for coord in item_coords]),
+                             max([coord[3] for coord in item_coords])]
+            return column_coords
+        return column["coordinates"]
+
+    def extract_column_width_old(self, column_set: Dict,
+                                 image: Image,
+                                 column_coords_max=None,
+                                 column_coords_min=None) -> Union[None, Dict]:
         """
         Extract column width property for the given columnset based on the
         mid point distance between 2 design objects.
@@ -478,8 +527,12 @@ class ContainerProperties:
         @param column_coords_min: each column's min coordinate values of a
                                   column set
         """
+        # TODO: Remove this method after making the new layout structure as
+        #  default layout generation.
         columns = column_set.get("columns", column_set.get("row", []))
         for ctr, column in enumerate(columns):
+            config_file = ''
+            ratio = ()
             if ctr + 1 < len(columns):
                 if config.NEW_LAYOUT_STRUCTURE:
                     first_column = column.get("coordinates", [])
@@ -497,9 +550,7 @@ class ContainerProperties:
                 mid_distance = self._get_mid_distance(first_column,
                                                       second_column)
                 ratio = (1, mid_distance)
-                column_set = self.get_column_width_keys(
-                    config.COLUMN_WIDTH_DISTANCE, ratio,
-                    column_set, ctr)
+                config_file = config.COLUMN_WIDTH_DISTANCE_OLD
             if ctr == len(columns) - 1:
                 image_width, image_height = image.size
                 if config.NEW_LAYOUT_STRUCTURE:
@@ -519,11 +570,72 @@ class ContainerProperties:
                     item_xmax = column_coords_max[2][ctr]
 
                 last_diff = (abs(item_xmax - image_width) /
-                             image_width) * 100
+                             image_width)
                 ratio = (1, last_diff)
-                column_set = self.get_column_width_keys(
-                    config.LAST_COLUMN_THRESHOLD, ratio,
-                    column_set, ctr)
+                config_file = config.LAST_COLUMN_THRESHOLD_OLD
+            column_set = self.get_column_width_keys(
+                config_file, ratio, column_set, ctr)
+        if config.NEW_LAYOUT_STRUCTURE:
+            return column_set
+
+    def extract_column_width(self, column_set: Dict,
+                             image: Image,
+                             column_coords_max=None,
+                             column_coords_min=None) -> Union[None, Dict]:
+        """
+        Extract column width property for the given columnset based on the
+        mid point distance between 2 design objects.
+        @param column_set: list of column design objects
+        @param column_coords_max: each column's max coordinate values of a
+                              column set
+
+        @param image: input PIL image
+        @param column_coords_min: each column's min coordinate values of a
+                                  column set
+        """
+        columns = column_set.get("columns", column_set.get("row", []))
+        image_width, image_height = image.size
+        for ctr, column in enumerate(columns):
+            config_file = ''
+            ratio = ()
+            if ctr + 1 < len(columns):
+                # if the column is not a last column then calculate the
+                # mid point distance ratio for the 2 element
+                if config.NEW_LAYOUT_STRUCTURE:
+                    first_column = column.get("coordinates", [])
+                    second_column = column_set.get(
+                        "row", [])[ctr + 1].get("coordinates", [])
+                else:
+                    first_column = [column_coords_max[0][ctr],
+                                    column_coords_max[1][ctr],
+                                    column_coords_max[2][ctr],
+                                    column_coords_max[3][ctr]]
+                    second_column = [column_coords_min[0][ctr + 1],
+                                     column_coords_min[1][ctr + 1],
+                                     column_coords_min[2][ctr + 1],
+                                     column_coords_min[3][ctr + 1]]
+
+                config_file = config.COLUMN_WIDTH_DISTANCE
+                mid_ratio = self._get_mid_distance(first_column,
+                                                   second_column)
+                ratio = (1, mid_ratio)
+            elif ctr == len(columns) - 1:
+                # if the column is the last column then calculate the
+                # xmax / parent_width [ image ] ratio
+                if config.NEW_LAYOUT_STRUCTURE:
+                    first_column = self.change_column_coordinates(column)
+                else:
+                    first_column = [column_coords_max[0][ctr],
+                                    column_coords_max[1][ctr],
+                                    column_coords_max[2][ctr],
+                                    column_coords_max[3][ctr]]
+
+                config_file = config.LAST_COLUMN_THRESHOLD
+                xmax_ratio = first_column[2] / image_width
+                ratio = (1, xmax_ratio)
+            column_set = self.get_column_width_keys(
+                config_file, ratio, column_set, ctr)
+
         if config.NEW_LAYOUT_STRUCTURE:
             return column_set
 
@@ -574,9 +686,9 @@ class ContainerProperties:
             else:
                 alignment = max(alignment, key=alignment.count)
             columnset.update({"horizontalAlignment": alignment})
-            self.extract_column_width(columnset, image,
-                                      column_coords_max=column_coords_max,
-                                      column_coords_min=column_coords_min)
+            self.extract_column_width_old(columnset, image,
+                                          column_coords_max=column_coords_max,
+                                          column_coords_min=column_coords_min)
         else:
             # Columns width extraction for the columns inside the row
             return self.extract_column_width(columnset, self.pil_image)

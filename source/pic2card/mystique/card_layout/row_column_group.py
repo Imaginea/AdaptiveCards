@@ -17,8 +17,10 @@ def generate_card_layout(json_objects: List) -> List[Dict]:
     @return: generated card layout
     """
     card_layout = []
+    # group row and columns
     row_column_group = RowColumnGroup()
     row_column_group.row_column_grouping(json_objects, card_layout)
+    # merge items to containers
     container_group = ContainerGroup()
     card_layout = container_group.merge_items(card_layout)
     return card_layout

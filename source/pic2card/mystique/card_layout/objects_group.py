@@ -322,7 +322,7 @@ class RowColumnGrouping(GroupObjects):
             object_two = bbox_2
 
         return (bbox_1 != bbox_2 and (
-            (round(y_min_difference, 2) <= self.Y_MIN_THESHOLD)
+            (round(y_min_difference, 2) <= self.Y_MIN_THESHOLD + 0.010)
             or self.vertical_inclusive(object_one, object_two)
             or (round(y_diff, 2) < self.Y_THRESHOLD
                 and self.horizontal_inclusive(object_one, object_two)

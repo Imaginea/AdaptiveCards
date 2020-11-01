@@ -156,9 +156,8 @@ class ContainerGroup:
         @param card_layout: the generated layout structure
         @return: Grouped layout structure
         """
-        container_items = DsHelper().containers
-        container_items.remove('columnset')
-        container_items.remove('column')
+        # get the list of container names for merging the items
+        container_items = DsHelper().merging_containers_list
         container_template = ContainerTemplate()
         for container_name in container_items:
             container_template_object = getattr(container_template,
