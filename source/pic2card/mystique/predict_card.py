@@ -5,8 +5,7 @@ import io
 import json
 import os
 import uuid
-from multiprocessing import Process, Queue
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple
 
 import cv2
 import numpy as np
@@ -148,50 +147,6 @@ class PredictCard:
                                   image, image_np, card_format)
         return card
 
-    def card_layout_generation(self, json_objects: List,
-                               queue: Queue) -> List[Dict]:
-        """
-        Returns the generated hierarchical layout structure.
-        @param json_objects: extracted list of design objects
-        @param queue: Queue object of the calling process
-        @return: Generated layout structure
-        """
-        card_layout = row_column_group.generate_card_layout(json_objects)
-        if queue:
-            queue.put(card_layout)
-        return card_layout
-
-    def new_layout_generation(self, json_objects: Dict,
-                              image: Image) -> Union[List, None]:
-        """
-        Performs the property extraction and hierarchical layout structuring
-        in parallel and merges both on completion to export it to the adaptive
-        card json body.
-        @param json_objects: List of extracted design objects
-        @param image: input design image
-        @return: exported adaptive card json body
-        """
-
-        queue1 = Queue()
-        queue2 = Queue()
-        try:
-            process1 = Process(target=self.get_object_properties, args=(
-                json_objects["objects"], image, queue1,))
-            process2 = Process(target=self.card_layout_generation,
-                               args=(json_objects["objects"], queue2,))
-            process1.start()
-            process2.start()
-
-            properties = queue1.get()
-            card_layout = queue2.get()
-
-            process1.join()
-            process2.join()
-            return adaptive_card_export.export_to_card(card_layout,
-                                                       properties, image)
-        except Exception:
-            return None
-
     def generate_card(self, prediction: Dict, image: Image,
                       image_np: np.array, card_format: str):
         """
@@ -235,7 +190,9 @@ class PredictCard:
         # structuring and property extraction in parallel and finally
         # merges both to export it to card json body
         if config.NEW_LAYOUT_STRUCTURE:
-            body = self.new_layout_generation(json_objects, image)
+            card_layout = row_column_group.generate_card_layout(json_objects,
+                                                                image, self)
+            body = adaptive_card_export.export_to_card(card_layout, image)
         else:
             card_arrange = CardArrange()
             body, ymins = card_arrange.build_card_json(

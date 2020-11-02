@@ -1,20 +1,21 @@
 """Module responsible for grouping the related row of elements and to it's
 respective columns"""
 from typing import List, Dict
+from multiprocessing import Process, Queue
+from PIL import Image
 
 from mystique.extract_properties import CollectProperties
-
 from .container_group import ContainerGroup
 from .objects_group import RowColumnGrouping
-from .ds_helper import DsHelper
+from .ds_helper import DsHelper, ContainerDetailTemplate
 
 
-def generate_card_layout(json_objects: List) -> List[Dict]:
+def get_layout_structure(json_objects: List, queue: Queue) -> None:
     """
-    Calls the respective layout merging methods and returns the
-    hierarchical layout structure.
-    @param json_objects: List of predicted design elements from the model
-    @return: generated card layout
+    method handles the hierarchical layout generating
+    @param json_objects: detected list of design objects from the model
+    @param queue: Queue object of the calling process
+    @return: generated hierarchical card layout
     """
     card_layout = []
     # group row and columns
@@ -23,7 +24,45 @@ def generate_card_layout(json_objects: List) -> List[Dict]:
     # merge items to containers
     container_group = ContainerGroup()
     card_layout = container_group.merge_items(card_layout)
-    return card_layout
+    if queue:
+        queue.put(card_layout)
+
+
+def generate_card_layout(json_objects: List,
+                         image: Image,
+                         predict_card_object=None) -> RowColumnGrouping:
+    """
+    Performs the property extraction and hierarchical layout structuring
+    in parallel and merges both on completion and returns the card layout
+    with the spatial and property details.
+    @param json_objects: List of extracted design objects
+    @param image: input design image
+    @param predict_card_object: PredictCard object
+    @return: card layout with the primitive properties merged
+    """
+    queue1 = Queue()
+    queue2 = Queue()
+    try:
+        process1 = Process(target=predict_card_object.get_object_properties,
+                           args=(json_objects["objects"], image, queue1,))
+        process2 = Process(target=get_layout_structure,
+                           args=(json_objects["objects"], queue2,))
+        process1.start()
+        process2.start()
+
+        properties = queue1.get()
+        card_layout = queue2.get()
+
+        process1.join()
+        process2.join()
+        # merge the card layout and extracted properties
+        ds_helper = DsHelper()
+        container_detail_object = ContainerDetailTemplate()
+        ds_helper.merge_properties(properties, card_layout,
+                                   container_detail_object)
+        return card_layout
+    except Exception:
+        return None
 
 
 class RowColumnGroup:

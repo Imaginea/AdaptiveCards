@@ -11,10 +11,11 @@ class DsHelper:
     Base class for layout ds utilities and template handling.
     - handles all utility functions needed for the layout generation
     """
+    CONTAINERS = ['columnset', 'column', 'imageset', 'choiceset']
+    MERGING_CONTAINERS_LIST = ['imageset', 'choiceset']
 
     def __init__(self):
-        self.containers = ['columnset', 'column', 'imageset', 'choiceset']
-        self.merging_containers_list = ['imageset', 'choiceset']
+
         self.serialized_layout = []
         self.ds_template = DsDesignTemplate()
 
@@ -31,7 +32,7 @@ class DsHelper:
         @param container_details_object: ContainerDetailsTemplate object
         """
         if (isinstance(design_object, dict) and
-                design_object.get("object", "") not in self.containers):
+                design_object.get("object", "") not in DsHelper.CONTAINERS):
             extracted_properties = [prop for prop in properties
                                     if prop.get("uuid", "") ==
                                     design_object.get("uuid")][0]
@@ -62,7 +63,7 @@ class DsHelper:
         @param card_layout: generated layout structure
         """
         if (isinstance(design_object, dict) and
-                design_object.get("object", "") not in self.containers):
+                design_object.get("object", "") not in DsHelper.CONTAINERS):
             design_class = design_object.get("class", "")
             if design_object in card_layout:
                 tab_space = "\t" * 0

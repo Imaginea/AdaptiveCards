@@ -157,7 +157,7 @@ class ContainerGroup:
         @return: Grouped layout structure
         """
         # get the list of container names for merging the items
-        container_items = DsHelper().merging_containers_list
+        container_items = DsHelper.MERGING_CONTAINERS_LIST
         container_template = ContainerTemplate()
         for container_name in container_items:
             container_template_object = getattr(container_template,

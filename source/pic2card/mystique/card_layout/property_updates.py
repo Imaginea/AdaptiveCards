@@ -73,7 +73,7 @@ class DsAlignment:
             })
 
             # set the container's alignment
-            if design_object.get("object", "") in DsHelper().containers:
+            if design_object.get("object", "") in DsHelper.CONTAINERS:
                 container_details_template_object = getattr(
                     container_details_object,
                     design_object.get("object", ""))
@@ -116,7 +116,7 @@ class DsAlignment:
         """
 
         if (isinstance(card_layout, dict) and
-                card_layout.get("object", "") in DsHelper().containers):
+                card_layout.get("object", "") in DsHelper.CONTAINERS):
             container_details_template_object = getattr(
                 container_details_object, card_layout.get("object", ""))
             self.update_conflicting_alignments(

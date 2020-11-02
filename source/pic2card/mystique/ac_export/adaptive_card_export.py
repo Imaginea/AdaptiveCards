@@ -12,21 +12,16 @@ from .adaptive_card_templates import AdaptiveCardTemplate
 from .export_helper import AcContainerExport
 
 
-def export_to_card(card_layout: List[Dict], properties: List,
+def export_to_card(card_layout: List[Dict],
                    pil_image: Image) -> List[Dict]:
     """
     Returns the exported adaptive card design body.
     @param card_layout: Generated hierarchical layout structure.
-    @param properties: List of design object with properties extracted.
     @param pil_image: Input design image
     @return: Exported adaptive card json body
     """
     export_card = AdaptiveCardExport()
     container_details_object = ContainerDetailTemplate()
-    ds_helper_object = DsHelper()
-    # merge the properties and the layout ds
-    ds_helper_object.merge_properties(properties, card_layout,
-                                      container_details_object)
     # update the extracted properties
     card_layout = property_updates.update_properties(
         card_layout, container_details_object, pil_image)
@@ -62,7 +57,7 @@ class AdaptiveCardExport:
         @param design_object: design objects from the layout structure
         """
         if (isinstance(design_object, dict) and
-                design_object.get("object", "") not in DsHelper().containers):
+                design_object.get("object", "") not in DsHelper.CONTAINERS):
             template_object = getattr(self.object_template,
                                       design_object.get("object", ""))
             body.append(template_object(design_object))

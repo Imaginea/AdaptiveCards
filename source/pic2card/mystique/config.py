@@ -96,13 +96,13 @@ IMAGE_SIZE_RATIOS = {
 # Threshold values of mid point distance between 2 design objects column with
 # labels
 COLUMN_WIDTH_DISTANCE_OLD = {
-        (1.0, 0.446): "auto",
+        (1.0, 0.466): "auto",
         (1.0, 0.804): "stretch"
 }
 # Threshold values of the mid point distance for the last column in the columns
 # and the input image's width, height for the column width labels
 LAST_COLUMN_THRESHOLD_OLD = {
-        (1.0, 0.368): "stretch",
+        (1.0, 0.0368): "stretch",
         (1.0, 0.224): "auto"
 }
 # Threshold values of mid point distance between 2 design objects column with

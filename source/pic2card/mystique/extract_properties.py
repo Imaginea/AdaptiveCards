@@ -419,17 +419,15 @@ class ContainerProperties:
         @param container_detail: object of the ContainerDetailTemplate
         """
 
-        ds_template = DsHelper()
         # TODO: remove the choiceset removal part after the container
         #  alignment property is added
-        ds_template.containers.remove("choiceset")
         if isinstance(design_object, list):
             for design_obj in design_object:
                 self.get_container_properties(design_obj, pil_image,
                                               container_detail)
 
         elif (isinstance(design_object, dict)
-              and design_object.get("object", "") in ds_template.containers):
+              and design_object.get("object", "") in DsHelper.CONTAINERS[:-1]):
             property_object = getattr(self,
                                       design_object.get("object", ""))
 
