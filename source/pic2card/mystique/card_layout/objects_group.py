@@ -505,8 +505,14 @@ class ChoicesetGrouping(GroupObjects):
             }
             alignment = []
             for design_object in group:
-                self.card_arrange.append_objects(design_object,
-                                                 choice_set["choices"])
+                choice_set["choices"].append({
+                    "title": design_object.get("data", ""),
+                    "value": "",
+                    "horizontalAlignment": design_object.get(
+                        "horizontal_alignment", "")
+                })
+                # self.card_arrange.append_objects(design_object,
+                #                                  choice_set["choices"])
                 alignment.append(design_object.get("horizontal_alignment",
                                                    "Left"))
             preference_order = ["Left", "Center", "Right"]

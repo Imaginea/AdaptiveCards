@@ -140,7 +140,11 @@ PREFERENCE_ORDER = ["Left", "Center", "Right"]
 # ALIGNMENT THRESHOLDS
 ALIGNMENT_THRESHOLDS = {
         "minimum_range": 0.10,
-        "maximum_range": 0.55,
-        "left_range": (0.0, 0.45),
-        "center_range": (0.45, 0.55),
+        "left_range": 0.45,
+        "center_range": 0.55,
+}
+# LINE BASED ALIGNMENT THRESHOLDS
+LINE_ALIGNMENT_THRESHOLD = {
+        "minimum": 0.20,
+        "maximum": 0.75
 }

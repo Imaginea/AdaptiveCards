@@ -8,6 +8,9 @@ from PIL import Image
 import numpy as np
 import cv2
 
+from tests.test_variables import (debug_string_test, test_img_obj1,
+                                  test_img_obj2, test_cset_obj1,
+                                  test_cset_obj2)
 from mystique.utils import load_od_instance
 from mystique.predict_card import PredictCard
 from mystique.card_layout.arrange_card import CardArrange
@@ -17,10 +20,8 @@ from mystique.ac_export.adaptive_card_export import (
 from mystique.card_layout.objects_group import (RowColumnGrouping,
                                                 ImageGrouping,
                                                 ChoicesetGrouping)
+from mystique.card_layout import row_column_group
 from mystique.card_layout.ds_helper import DsHelper
-from tests.test_variables import (debug_string_test, test_img_obj1,
-                                  test_img_obj2, test_cset_obj1,
-                                  test_cset_obj2)
 from mystique.card_layout import bbox_utils
 
 curr_dir = os.path.dirname(__file__)
@@ -145,8 +146,9 @@ class TestLayoutStructure(BaseSetUpClass):
         """
         Tests the generated layout length and datatype for the given test image
         """
-        new_layout = self.model_instance.new_layout_generation(
-            self.json_objects, self.image)
+        new_layout = row_column_group.generate_card_layout(self.json_objects,
+                                                           self.image,
+                                                           self.model_instance)
         self.assertEqual(len(new_layout), 14)
         self.assertEqual(type(new_layout).__name__, "list")
 
@@ -156,8 +158,8 @@ class TestLayoutStructure(BaseSetUpClass):
         Tests the adaptive card builded using the testing Format
         for the given test image
         """
-        final_ds = self.model_instance.card_layout_generation(
-            self.json_objects['objects'], self.test_queue)
+        final_ds = row_column_group.generate_card_layout(
+            self.json_objects, self.image, self.model_instance)
         ds_helper = DsHelper()
         debug_string = ds_helper.build_serialized_layout_string(final_ds)
         card_json = self.export_card.build_adaptive_card(final_ds)

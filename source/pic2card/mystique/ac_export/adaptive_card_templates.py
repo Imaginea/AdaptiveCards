@@ -119,8 +119,8 @@ class AdaptiveCardTemplate:
                 "horizontalAlignment": design_object.get(
                     "horizontal_alignment", "")
             }
-            # choice_set["choices"].append(item)
-            choice_set = item
+            choice_set["choices"].append(item)
+            # choice_set = item
 
         return choice_set
 

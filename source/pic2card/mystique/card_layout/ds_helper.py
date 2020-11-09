@@ -100,7 +100,6 @@ class DsHelper:
                                  card_layout,
                                  card_layout,
                                  indentation=0)
-
         return self.serialized_layout
 
     def add_element_to_ds(self, element_type: str, card_layout: List,

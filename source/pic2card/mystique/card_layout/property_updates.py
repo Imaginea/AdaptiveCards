@@ -70,7 +70,7 @@ class DsAlignment:
                     xmax=design_element_xmax,
                     width=parent_width,
                     image=pil_image)
-            })
+                })
 
             # set the container's alignment
             if design_object.get("object", "") in DsHelper.CONTAINERS:
@@ -79,9 +79,18 @@ class DsAlignment:
                     design_object.get("object", ""))
                 container_items = container_details_template_object(
                     design_object)
-                # if a container has only one element, leave the alignment
-                # extracted based on the input image size.
-                if len(container_items) > 1:
+                # if a container has only one element, then extract the
+                # alignment based on the line numbers and top values from
+                # pytesseract data.
+                if len(container_items) == 1:
+                    text_data = container_items[0].get("image_data", [])
+                    if text_data:
+                        if self._get_number_of_lines(text_data) > 1:
+                            alignment = self.base_property.get_line_alignment(
+                                text_data)
+                            container_items[0].update(
+                                {"horizontal_alignment": alignment})
+                else:
                     self.update_or_set_alignment(
                         container_items,
                         container_details_object,
@@ -100,6 +109,20 @@ class DsAlignment:
                         design_obj,
                         container_details_object,
                         image=image)
+
+    def _get_number_of_lines(self, text_data: Dict) -> int:
+        """
+        Returns the total number of lines extracted from the pytesseract
+        output for a design element.
+        @param text_data: pytesseract image_to_data o/p
+        @return: total number of lines
+        """
+        number_of_lines = list(
+            set(text_data.get("line_num", [])))
+        if 0 in number_of_lines:
+            number_of_lines.remove(0)
+        number_of_lines = len(number_of_lines)
+        return number_of_lines
 
     def update_conflicting_alignments(
             self, card_layout: List,

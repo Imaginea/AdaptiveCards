@@ -52,7 +52,7 @@ class BaseExtractProperties(AbstractBaseExtractProperties):
         min_range = (width *
                      config.ALIGNMENT_THRESHOLDS.get("minimum_range"))
         max_range = (width *
-                     config.ALIGNMENT_THRESHOLDS.get("maximum_range"))
+                     config.ALIGNMENT_THRESHOLDS.get("center_range"))
 
         left_min_condition = math.floor(xmin) <= math.ceil(min_range)
 
@@ -68,9 +68,37 @@ class BaseExtractProperties(AbstractBaseExtractProperties):
                 return "Right"
             if left_min_condition and right_min_condition:
                 return None
-        if left_range[0] <= (avg / width) < left_range[1]:
+        if 0.0 <= (avg / width) < left_range:
             return "Left"
-        elif center_range[0] <= (avg / width) < center_range[1]:
+        elif left_range <= (avg / width) < center_range:
+            return "Center"
+        else:
+            return "Right"
+
+    def get_line_alignment(self, image_data: Dict):
+        """
+        Extracts the alignment of the paragraph text based on the tesseract
+        detected lines and top index values.
+        Based on the line number and the left values from the pytesseract o/p
+        we can check for the distance in left alignments of each line with
+        the help of the threshold values , bins the alignments values.
+        @param image_data: tesseract detected text data from image
+        @return: alignment value
+        """
+
+        lines = image_data.get("line_num", [])
+        left_values = image_data.get("left", [])
+        line_one_index = lines.index(1)
+        line_two_index = lines.index(2)
+        difference_ratio = (
+            max(left_values[line_one_index], left_values[line_two_index]) -
+            min(left_values[line_one_index], left_values[line_two_index]))
+        difference_ratio = difference_ratio / max(left_values)
+        minimum_range = config.LINE_ALIGNMENT_THRESHOLD.get("minimum")
+        maximum_range = config.LINE_ALIGNMENT_THRESHOLD.get("maximum")
+        if difference_ratio < minimum_range:
+            return "Left"
+        elif minimum_range < difference_ratio < maximum_range:
             return "Center"
         else:
             return "Right"
@@ -200,13 +228,15 @@ class ChoiceSetProperty(BaseExtractProperties):
         Returns the checkbox properties of the extracted design object
         @return: property object
         """
+        text_data = self.get_text(image, coords)
         return {
             "horizontal_alignment": self.get_alignment(
                 image=image,
                 xmin=coords[0],
                 xmax=coords[2]
             ),
-            "data": self.get_text(image, coords)[0],
+            "data": text_data[0],
+            "image_data": text_data[1],
         }
 
     def radiobutton(self, image: Image, coords: Tuple) -> Dict:
@@ -229,7 +259,6 @@ class TextBoxProperty(BaseExtractProperties, FontColor):
         @return: property object
         """
         data, image_data = self.get_text(image, coords)
-        # loading the active font property extractor class
         font_spec = load_instance_with_class_path(
             config.FONT_SPEC_REGISTRY[config.ACTIVE_FONTSPEC_NAME])
         return {
@@ -239,6 +268,7 @@ class TextBoxProperty(BaseExtractProperties, FontColor):
                 xmax=coords[2]
             ),
             "data": data,
+            "image_data": image_data,
             "size": font_spec.get_size(image, coords, img_data=image_data),
             "weight": font_spec.get_weight(image, coords, img_data=image_data),
             "color": self.get_colors(image, coords)
@@ -305,13 +335,15 @@ class ActionSetProperty(BaseExtractProperties):
         Returns the actionset properties of the extracted design object
         @return: property object
         """
+        text_data = self.get_text(image, coords)
         return {
             "horizontal_alignment": self.get_alignment(
                 image=image,
                 xmin=coords[0],
                 xmax=coords[2]
             ),
-            "data": self.get_text(image, coords)[0],
+            "data": text_data[0],
+            "image_data": text_data[1],
             "style": self.get_actionset_type(image, coords)
         }
 
@@ -550,7 +582,7 @@ class ContainerProperties:
                 ratio = (1, mid_distance)
                 config_file = config.COLUMN_WIDTH_DISTANCE_OLD
             if ctr == len(columns) - 1:
-                image_width, image_height = image.size
+                image_width, _ = image.size
                 if config.NEW_LAYOUT_STRUCTURE:
                     if "imageset" in [list(item.keys())[0]
                                       for item in column.get("column")["items"]
@@ -592,7 +624,7 @@ class ContainerProperties:
                                   column set
         """
         columns = column_set.get("columns", column_set.get("row", []))
-        image_width, image_height = image.size
+        image_width, _ = image.size
         for ctr, column in enumerate(columns):
             config_file = ''
             ratio = ()

@@ -57,6 +57,6 @@ class AcContainerExport:
         template_object = getattr(self.object_template,
                                   self.design_object.get("object", ""))
         body.append(template_object(self.design_object))
-        body = body[-1].get("choices", [])
+        # body = body[-1].get("choices", [])
         self.export_object.export_card_body(
             body, self.design_object.get("choiceset", {}).get("items", []))

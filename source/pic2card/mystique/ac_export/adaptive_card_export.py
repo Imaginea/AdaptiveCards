@@ -60,7 +60,12 @@ class AdaptiveCardExport:
                 design_object.get("object", "") not in DsHelper.CONTAINERS):
             template_object = getattr(self.object_template,
                                       design_object.get("object", ""))
-            body.append(template_object(design_object))
+            card_template = template_object(design_object)
+            if (body and design_object.get("object") == "radiobutton"
+                    and body[-1].get("type") == "Input.ChoiceSet"):
+                body[-1]["choices"].append(card_template["choices"][0])
+            else:
+                body.append(card_template)
         elif isinstance(design_object, list):
             for design_obj in design_object:
                 self.export_card_body(body, design_obj)
@@ -78,7 +83,6 @@ class AdaptiveCardExport:
         """
 
         self.export_card_body(self.body, card_layout)
-
         y_minimum_final = [c.get("coordinates")[1] for c in
                            card_layout]
         body = [value for _, value in sorted(zip(y_minimum_final, self.body),
