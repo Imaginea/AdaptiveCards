@@ -60,7 +60,10 @@ FONT_SPEC_REGISTRY = {
     "font_bbox": "mystique.font_properties.FontPropBoundingBox"
 }
 # active font prop pipelne
-ACTIVE_FONTSPEC_NAME = "font_bbox"
+ACTIVE_FONTSPEC_NAME = "font_morph"
+
+# get char info from ocr:
+GET_CHAR_INFO = False
 
 # image detection swtiching paramater
 # On True [ uses custom image pipeline for image objects]

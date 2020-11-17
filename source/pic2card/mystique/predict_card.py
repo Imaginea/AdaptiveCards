@@ -20,7 +20,7 @@ from mystique.extract_properties import CollectProperties
 from mystique.layout_generation.generate_datastrucure import (
     GenerateLayoutDataStructure)
 from mystique.image_extraction import ImageExtraction
-from mystique.utils import get_property_method
+from mystique.utils import get_property_method, actual_weights
 
 
 class PredictCard:
@@ -91,11 +91,14 @@ class PredictCard:
         collect_prop = CollectProperties()
         for design_object in design_objects:
             # Invoking the methods from dict according to the design object
+            collect_prop.uuid = design_object.get("uuid")
             property_object = get_property_method(collect_prop,
                                                   design_object.get("object"))
             property_element = property_object(pil_image,
                                                design_object.get("coords"))
+            # print(property_element)
             design_object.update(property_element)
+        design_objects = actual_weights(design_objects)
         # If any Queue object is passed , put the return value inside the
         # queue in-order to retrieve the value after the process finishes.
         if queue:
@@ -303,7 +306,7 @@ class PredictCard:
         # delete image from the rcnn model detected objects and coordinates
         positions_to_remove = [ctr for ctr, design_object in enumerate(
             json_objects.get("objects", []))
-                               if design_object.get("object") == "image"]
+            if design_object.get("object") == "image"]
         json_objects["objects"] = [
             design_object for ctr, design_object in enumerate(
                 json_objects.get("objects")) if ctr not in positions_to_remove

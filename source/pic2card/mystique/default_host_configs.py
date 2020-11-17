@@ -24,3 +24,10 @@ FONT_WEIGHT_MORPH = {
     "default": 2.75,
     "bolder": 3.25
 }
+
+# Updated thresholds on font weight morphs
+FONT_WEIGHT_MORPH_V2 = {
+    "lighter": 1.85,
+    "default": 2.25,
+    "bolder": 2.75
+}

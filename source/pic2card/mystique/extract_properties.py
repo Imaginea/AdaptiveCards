@@ -101,6 +101,13 @@ class BaseExtractProperties(AbstractBaseExtractProperties):
             output_type=Output.DICT)
         text_list = filter(None, img_data['text'])
         extracted_text = ' '.join(text_list).lstrip("#-_*~").strip()
+
+        # to get font height and weight for each character
+        if config.GET_CHAR_INFO:
+            img_data = pytesseract.image_to_boxes(cropped_image, lang="eng",
+                                                  config="--psm 6",
+                                                  output_type=Output.DICT)
+
         return extracted_text, img_data
 
 
@@ -236,7 +243,12 @@ class TextBoxProperty(BaseExtractProperties, FontColor):
         Returns the textbox properties of the extracted design object
         @return: property object
         """
+
         data, image_data = self.get_text(image, coords)
+
+        # Adding uuid to image_data dict
+        image_data.update(uuid=self.uuid)
+
         # loading the active font property extractor class
         font_spec = load_instance_with_class_path(
             config.FONT_SPEC_REGISTRY[config.ACTIVE_FONTSPEC_NAME])
@@ -401,8 +413,10 @@ class CollectProperties(TextBoxProperty, ChoiceSetProperty,
                               color
     from image objects - extracts image size and image text
     """
-    def __init__(self, image=None):
+
+    def __init__(self, image=None, uuid=None):
         self.pil_image = image
+        self.uuid = uuid
 
     def find_iou(self, coord1, coord2, inter_object=False,
                  columns_group=False) -> List:

@@ -6,6 +6,8 @@ can switch for different implementation to obtain font properties
 from typing import Tuple, Dict, List
 import numpy as np
 import cv2
+from mystique import config
+from .utils import text_size_processing
 from PIL import Image
 from mystique import default_host_configs
 from mystique.extract_properties_abstract import AbstractFontSizeAndWeight
@@ -16,6 +18,19 @@ class FontPropBoundingBox(AbstractFontSizeAndWeight):
     Class handles extraction of font size and weight using contours
     from pytesseract image to data api
     """
+    @staticmethod
+    def get_bbox_properties_each_char(img_data: str) -> Tuple[List, List]:
+        """
+        Static method to get list of font height and weight
+        from the pytesseract image data dictionary
+        @param : img_data
+        @return : box_height and box_width
+        """
+
+        box_height = img_data['top']
+        box_width = list(set(img_data['right'])-set(img_data['left']))
+
+        return box_height, box_width
 
     @staticmethod
     def get_bbox_properties(img_data: Dict) -> Tuple[List, List]:
@@ -34,7 +49,7 @@ class FontPropBoundingBox(AbstractFontSizeAndWeight):
                                           img_data['top'][i],
                                           img_data['width'][i],
                                           img_data['height'][i])
-                # h = text_size_processing(img_data['text'][i], h)
+                char_h = text_size_processing(img_data['text'][i], char_h)
                 # Approximate character width
                 char_w = char_w/len(img_data['text'][i])
                 box_height.append(char_h)
@@ -55,7 +70,10 @@ class FontPropBoundingBox(AbstractFontSizeAndWeight):
         @return: size
         """
         _, image_height = image.size
-        box_height = self.get_bbox_properties(img_data)[0]
+        if config.GET_CHAR_INFO:
+            box_height = self.get_bbox_properties_each_char(img_data)[0]
+        else:
+            box_height = self.get_bbox_properties(img_data)[0]
         font_size = default_host_configs.FONT_SIZE
         # Handling of unrecognized characters
         if not box_height:
@@ -93,7 +111,10 @@ class FontPropBoundingBox(AbstractFontSizeAndWeight):
         """
         image_width, _ = image.size
         # using the box width list that has each character width of input text
-        box_width = self.get_bbox_properties(img_data)[1]
+        if config.GET_CHAR_INFO:
+            box_width = self.get_bbox_properties_each_char(img_data)[1]
+        else:
+            box_width = self.get_bbox_properties(img_data)[1]
         font_weight = default_host_configs.FONT_WEIGHT_BBOX
         # Handling of unrecognized characters
         if not box_width:
@@ -102,14 +123,16 @@ class FontPropBoundingBox(AbstractFontSizeAndWeight):
             weights = int(np.mean(box_width))
             weights_ratio = round((weights/image_width), 4)
 
+        """
         if font_weight['lighter'] > weights_ratio:
             weight = "Lighter"
         elif font_weight['bolder'] < weights_ratio:
             weight = "Bolder"
         else:
             weight = "Default"
+        """
 
-        return weight
+        return {img_data['uuid']: weights_ratio}
 
 
 class FontPropMorph(FontPropBoundingBox):
@@ -156,9 +179,15 @@ class FontPropMorph(FontPropBoundingBox):
                 break
         # length of the lines in text
         area_of_skel = np.sum(skel)/255
+
         # width of line = area of the line / length of the line
         thickness = round(area_of_img/area_of_skel, 2)
 
+        if max(img_data['line_num']) >= 3:
+            # thickness = thickness + 0.5
+            print(img_data['text'], thickness)
+
+        """
         font_weight = default_host_configs.FONT_WEIGHT_MORPH
 
         if font_weight['lighter'] >= thickness:
@@ -167,5 +196,6 @@ class FontPropMorph(FontPropBoundingBox):
             weight = "Bolder"
         else:
             weight = "Default"
+        """
 
-        return weight
+        return {img_data['uuid']: thickness}
