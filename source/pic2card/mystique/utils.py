@@ -179,6 +179,12 @@ def text_size_processing(text: str, height: int):
 
 
 def categorize_weights(design_objects):
+    """
+    Categorize the weights in integer to AdaptiveCard format based on
+    normal distribution.
+    @param design_objects: input design objects dictionary
+    @return: design_objects dictionary with weight labelled
+    """
     dynamic_thresh = []
     for item in design_objects:
         if item['object'] == 'textbox':
