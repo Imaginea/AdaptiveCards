@@ -102,14 +102,7 @@ class FontPropBoundingBox(AbstractFontSizeAndWeight):
             weights = int(np.mean(box_width))
             weights_ratio = round((weights/image_width), 4)
 
-        if font_weight['lighter'] > weights_ratio:
-            weight = "Lighter"
-        elif font_weight['bolder'] < weights_ratio:
-            weight = "Bolder"
-        else:
-            weight = "Default"
-
-        return weight
+        return {img_data['uuid']: weights_ratio}
 
 
 class FontPropMorph(FontPropBoundingBox):
@@ -158,14 +151,5 @@ class FontPropMorph(FontPropBoundingBox):
         area_of_skel = np.sum(skel)/255
         # width of line = area of the line / length of the line
         thickness = round(area_of_img/area_of_skel, 2)
-
         font_weight = default_host_configs.FONT_WEIGHT_MORPH
-
-        if font_weight['lighter'] >= thickness:
-            weight = "Lighter"
-        elif font_weight['bolder'] <= thickness:
-            weight = "Bolder"
-        else:
-            weight = "Default"
-
-        return weight
+        return {img_data['uuid']: thickness}

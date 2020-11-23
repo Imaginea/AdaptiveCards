@@ -1,6 +1,7 @@
 import time
 import io
 import re
+import statistics
 from typing import Optional, Dict
 import glob
 import xml.etree.ElementTree as Et
@@ -13,6 +14,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 
 from mystique import config
+from mystique.default_host_configs import FONT_WEIGHT_MORPH
 
 # Colro map used for the plotting.
 COLORS = [
@@ -174,3 +176,31 @@ def text_size_processing(text: str, height: int):
     if (match or text[0].isupper()):
         height -= 2
     return height
+
+
+def categorize_weights(design_objects):
+    dynamic_thresh = []
+    for item in design_objects:
+        if item['object'] == 'textbox':
+            # print(f"{item['data']}, weight is {item['weight']}")
+            dynamic_thresh.append(item['weight'][item['uuid']])
+
+    std = statistics.stdev(dynamic_thresh)
+    mean = np.mean(dynamic_thresh)
+    bold_limit = round(mean + std, 2)
+    light_limit = round(mean - std, 2)
+
+    # if only one element is identified in the given picture
+    if bold_limit == light_limit or light_limit <= 0:
+        bold_limit = FONT_WEIGHT_MORPH['bolder']
+        light_limit = FONT_WEIGHT_MORPH['lighter']
+
+    for item in design_objects:
+        if item['object'] == 'textbox':
+            if item['weight'][item['uuid']] < light_limit:
+                item['weight'] = "Lighter"
+            elif item['weight'][item['uuid']] >= bold_limit:
+                item['weight'] = "Bolder"
+            else:
+                item['weight'] = "Default"
+    return design_objects
