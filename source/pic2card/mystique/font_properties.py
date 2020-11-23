@@ -29,6 +29,8 @@ def classify_font_weights(design_objects):
 
     std = statistics.stdev(dynamic_thresh)
     mean = np.mean(dynamic_thresh)
+    # Setting threshold limits based on difference between mean and
+    # std deviation for collected font weights
     bold_limit = round(mean + std, 2)
     light_limit = round(mean - std, 2)
 
