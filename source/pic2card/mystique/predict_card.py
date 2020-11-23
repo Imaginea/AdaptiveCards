@@ -16,7 +16,8 @@ from mystique.card_layout.arrange_card import CardArrange
 from mystique.ac_export.card_template_data import DataBinding
 from mystique.extract_properties import CollectProperties
 from mystique.image_extraction import ImageExtraction
-from mystique.utils import get_property_method, categorize_weights
+from mystique.font_properties import categorize_weights
+from mystique.utils import get_property_method
 from mystique.card_layout import row_column_group
 from mystique.card_layout import bbox_utils
 from mystique.ac_export import adaptive_card_export

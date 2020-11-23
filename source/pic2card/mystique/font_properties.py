@@ -6,9 +6,44 @@ can switch for different implementation to obtain font properties
 from typing import Tuple, Dict, List
 import numpy as np
 import cv2
+import statistics
 from PIL import Image
 from mystique import default_host_configs
 from mystique.extract_properties_abstract import AbstractFontSizeAndWeight
+
+
+def categorize_weights(design_objects):
+    """
+    Categorize the weights in integer to AdaptiveCard format based on
+    normal distribution.
+    @param design_objects: input design objects dictionary
+    @return: design_objects dictionary with weight labelled
+    """
+    dynamic_thresh = []
+    for item in design_objects:
+        if item['object'] == 'textbox':
+            # print(f"{item['data']}, weight is {item['weight']}")
+            dynamic_thresh.append(item['weight'][item['uuid']])
+
+    std = statistics.stdev(dynamic_thresh)
+    mean = np.mean(dynamic_thresh)
+    bold_limit = round(mean + std, 2)
+    light_limit = round(mean - std, 2)
+
+    # if only one element is identified in the given picture
+    if bold_limit == light_limit or light_limit <= 0:
+        bold_limit = default_host_configs.FONT_WEIGHT_MORPH['bolder']
+        light_limit = default_host_configs.FONT_WEIGHT_MORPH['lighter']
+
+    for item in design_objects:
+        if item['object'] == 'textbox':
+            if item['weight'][item['uuid']] < light_limit:
+                item['weight'] = "Lighter"
+            elif item['weight'][item['uuid']] >= bold_limit:
+                item['weight'] = "Bolder"
+            else:
+                item['weight'] = "Default"
+    return design_objects
 
 
 class FontPropBoundingBox(AbstractFontSizeAndWeight):
