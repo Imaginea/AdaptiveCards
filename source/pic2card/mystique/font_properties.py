@@ -94,10 +94,9 @@ class FontPropBoundingBox(AbstractFontSizeAndWeight):
         image_width, _ = image.size
         # using the box width list that has each character width of input text
         box_width = self.get_bbox_properties(img_data)[1]
-        font_weight = default_host_configs.FONT_WEIGHT_BBOX
         # Handling of unrecognized characters
         if not box_width:
-            weights_ratio = font_weight['default']
+            weights_ratio = default_host_configs.FONT_WEIGHT_BBOX['default']
         else:
             weights = int(np.mean(box_width))
             weights_ratio = round((weights/image_width), 4)
@@ -151,5 +150,4 @@ class FontPropMorph(FontPropBoundingBox):
         area_of_skel = np.sum(skel)/255
         # width of line = area of the line / length of the line
         thickness = round(area_of_img/area_of_skel, 2)
-        font_weight = default_host_configs.FONT_WEIGHT_MORPH
         return {img_data['uuid']: thickness}
