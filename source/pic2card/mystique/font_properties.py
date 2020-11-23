@@ -12,16 +12,18 @@ from mystique import default_host_configs
 from mystique.extract_properties_abstract import AbstractFontSizeAndWeight
 
 
-def categorize_weights(design_objects):
+def classify_font_weights(design_objects):
     """
-    Categorize the weights in integer to AdaptiveCard format based on
-    normal distribution.
+    Calculates thresholds using normal distribution from font
+    weights of each design_objects to classify and
+    returns font weight label accordingly.
     @param design_objects: input design objects dictionary
     @return: design_objects dictionary with weight labelled
     """
     dynamic_thresh = []
     for item in design_objects:
         if item['object'] == 'textbox':
+            # For debugging purposes
             # print(f"{item['data']}, weight is {item['weight']}")
             dynamic_thresh.append(item['weight'][item['uuid']])
 
@@ -30,7 +32,7 @@ def categorize_weights(design_objects):
     bold_limit = round(mean + std, 2)
     light_limit = round(mean - std, 2)
 
-    # if only one element is identified in the given picture
+    # if only one element or negative limits is identified in the given picture
     if bold_limit == light_limit or light_limit <= 0:
         bold_limit = default_host_configs.FONT_WEIGHT_MORPH['bolder']
         light_limit = default_host_configs.FONT_WEIGHT_MORPH['lighter']
