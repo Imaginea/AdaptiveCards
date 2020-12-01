@@ -225,6 +225,78 @@ class RowColumnGrouping(GroupObjects):
     def __init__(self, card_arrange=None):
         self.card_arrange = card_arrange
 
+    def _min_max_inclusive(self, bbox_1: List, bbox_2: List,
+                           min_index: int, max_index: int) -> bool:
+        """
+        Checks for condition - both x/y minimum  and x/y maximum ranges of
+        bbox_2 is inside bbox_1.
+        @param bbox_1: bounding box1
+        @param bbox_2: bounding box2
+        @param min_index: x or y min position
+        @param max_index: x or y max position
+        @return: Boolean value of the min and max inclusive condition
+        """
+        if bbox_2[min_index] < bbox_1[min_index]:
+            bbox_1, bbox_2 = bbox_2, bbox_1
+        return (bbox_1[min_index] <= bbox_2[min_index] <= bbox_1[max_index]
+                and bbox_1[min_index] <= bbox_2[max_index] <= bbox_1[max_index])
+
+    def _max_not_intersecting_condition(self, bbox_1: List,
+                                        bbox_2: List,
+                                        min_index: int, max_index: int) -> bool:
+        """
+        Checks for condition x/y minimum range of bbox_2 is inside bbox_1 and
+        x/y maximum range of bbox_2 is not inside the bbox_1.
+        @param bbox_1: bounding box1
+        @param bbox_2: bounding box2
+        @param min_index: x or y min position
+        @param max_index: x or y max position
+        @return: Boolean value of the inclusive condition
+        """
+        if bbox_2[min_index] > bbox_1[min_index]:
+            bbox_1, bbox_2 = bbox_2, bbox_1
+        return (bbox_2[min_index] <= bbox_1[min_index] <= bbox_2[max_index]
+                <= bbox_1[max_index])
+
+    def _min_not_intersecting_condition(self, bbox_1: List,
+                                        bbox_2: List,
+                                        min_index: int, max_index: int) -> bool:
+        """
+        Checks for condition x/y maximum range of bbox_2 is inside bbox_1 and
+        x/y minimum range of bbox_2 is not inside the bbox_1.
+        @param bbox_1: bounding box1
+        @param bbox_2: bounding box2
+        @param min_index: x or y min position
+        @param max_index: x or y max position
+        @return: Boolean value of the inclusive condition
+        """
+        if bbox_2[min_index] < bbox_1[min_index]:
+            bbox_1, bbox_2 = bbox_2, bbox_1
+        return (bbox_1[min_index] <= bbox_2[min_index] <= bbox_1[max_index]
+                <= bbox_2[max_index] and bbox_2[max_index] >= bbox_1[min_index])
+
+    def _bulid_inclusive_condition(self, bbox_1: List, bbox_2: List,
+                                   axis: str) -> bool:
+        """
+        Returns the boolean value of the set of inclusive conditions
+        @param bbox_1: bounding box1
+        @param bbox_2: bounding box2
+        @param axis: x or y
+        @return: Boolean value of the inclusive conditions
+        """
+        min_index = 0
+        max_index = 2
+        if axis == 'y':
+            min_index = 1
+            max_index = 3
+        return (self._min_max_inclusive(bbox_1, bbox_2, min_index, max_index)
+                or self._max_not_intersecting_condition(bbox_1, bbox_2,
+                                                        min_index,
+                                                        max_index)
+                or self._min_not_intersecting_condition(bbox_1, bbox_2,
+                                                        min_index,
+                                                        max_index))
+
     def horizontal_inclusive(self, bbox_1: List,
                              bbox_2: List) -> bool:
         """
@@ -236,25 +308,9 @@ class RowColumnGrouping(GroupObjects):
         @param bbox_2: design object two coordinates
         @return: the boolean value of the inclusive condition
         """
-
-        return (((bbox_1 and bbox_2) and (
-            (bbox_1[0] <= bbox_2[0] <= bbox_1[2]
-             and bbox_1[0] <= bbox_2[2] <= bbox_1[2])
-            or (bbox_2[0] <= bbox_1[0] <= bbox_2[2]
-                <= bbox_1[2] and bbox_2[2] <= bbox_1[2])
-            or (bbox_1[0] <= bbox_2[0] <= bbox_1[2]
-                <= bbox_2[2] and bbox_2[2] >= bbox_1[0]))
-                 ) or ((bbox_2 and bbox_1)
-                       and ((bbox_2[0] <= bbox_1[0]
-                             <= bbox_2[2] and bbox_2[0]
-                             <= bbox_1[2] <= bbox_2[2])
-                            or (bbox_1[0] <= bbox_2[0] <=
-                                bbox_1[2] <= bbox_2[2]
-                                and bbox_1[2] <= bbox_2[2])
-                            or (bbox_2[0] <= bbox_1[0]
-                                <= bbox_2[2] <= bbox_1[2]
-                                and bbox_1[2] >= bbox_2[0])))
-                )
+        return (bbox_1 and bbox_2) and (
+            self._bulid_inclusive_condition(bbox_1, bbox_2, 'x')
+        )
 
     def vertical_inclusive(self, bbox_1: List,
                            bbox_2: List) -> bool:
@@ -267,25 +323,9 @@ class RowColumnGrouping(GroupObjects):
         @param bbox_2: design object two coordinates
         @return: the boolean value of the inclusive condition
         """
-        return (
-            ((bbox_1 and bbox_2) and
-             ((bbox_1[1] <= bbox_2[1] <= bbox_1[3]
-               and bbox_1[1] <= bbox_2[3] <= bbox_1[3])
-              or (bbox_2[1] <= bbox_1[1] <= bbox_2[3]
-                  <= bbox_1[3] and bbox_2[3] <= bbox_1[3])
-              or (bbox_1[1] <= bbox_2[1] <= bbox_1[3]
-                  <= bbox_2[3] and bbox_2[3] >= bbox_1[1])
-              )) or ((bbox_2 and bbox_1)
-                     and ((bbox_2[1] <= bbox_1[1]
-                           <= bbox_2[3] and bbox_2[1]
-                           <= bbox_1[3] <= bbox_2[3])
-                          or (bbox_1[1] <= bbox_2[1] <=
-                              bbox_1[3] <= bbox_2[3]
-                              and bbox_1[3] <= bbox_2[3])
-                          or (bbox_2[1] <= bbox_1[1]
-                              <= bbox_2[3] <= bbox_1[3]
-                              and bbox_1[3] >= bbox_2[1])))
-        )
+        return (bbox_1 and bbox_2) and (
+            self._bulid_inclusive_condition(bbox_1, bbox_2, 'y')
+            )
 
     def row_condition(self, bbox_1: List,
                       bbox_2: List) -> bool:
