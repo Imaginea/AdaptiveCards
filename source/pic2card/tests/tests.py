@@ -108,6 +108,7 @@ class TestIOU(BaseSetUpClass):
                                                              self.image)
         self.assertEqual(extracted_sizes, ["Small", "Small"])
 
+    @patch('mystique.config.NEW_LAYOUT_STRUCTURE', False)
     def test_build_card_json(self):
         """
         Tests the length of the card json and the
