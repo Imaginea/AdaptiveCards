@@ -27,7 +27,7 @@ def classify_font_weights(design_objects):
             # print(f"{item['data']}, weight is {item['weight']}")
             dynamic_thresh.append(item['weight'][item['uuid']])
 
-    std = statistics.stdev(dynamic_thresh)
+    std = statistics.pstdev(dynamic_thresh)
     mean = np.mean(dynamic_thresh)
     # Setting threshold limits based on difference between mean and
     # std deviation for collected font weights
