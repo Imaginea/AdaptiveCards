@@ -6,7 +6,6 @@ python generate_card_using_python_client.py --image_path=/image_path \
     --api_url=url_of_the_service
 """
 import argparse
-import json
 import base64
 from mystique.utils import send_json_payload
 
