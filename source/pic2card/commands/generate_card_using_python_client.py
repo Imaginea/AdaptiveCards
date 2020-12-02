@@ -8,7 +8,6 @@ python generate_card_using_python_client.py --image_path=/image_path \
 import argparse
 import json
 import base64
-import requests
 
 
 def main(image_path=None, api_url=None, card_format=None):

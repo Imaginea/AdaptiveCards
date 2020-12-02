@@ -9,7 +9,6 @@ from typing import Dict, List, Tuple
 
 import cv2
 import numpy as np
-import requests
 from PIL import Image
 from mystique import config
 from mystique.card_layout.arrange_card import CardArrange
