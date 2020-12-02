@@ -47,6 +47,7 @@ class BaseAPITest(unittest.TestCase):
 
 
 class TestUtil:
+
     def collect_json_objects(self, image: Image,
                              model_instance: PredictCard) -> Dict:
         """

@@ -1,6 +1,3 @@
-import os
-from typing import Dict, List
-
 from multiprocessing import Queue
 import unittest
 from unittest.mock import patch
