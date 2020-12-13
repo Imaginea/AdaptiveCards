@@ -225,77 +225,33 @@ class RowColumnGrouping(GroupObjects):
     def __init__(self, card_arrange=None):
         self.card_arrange = card_arrange
 
-    def _min_max_inclusive(self, bbox_1: List, bbox_2: List,
-                           min_index: int, max_index: int) -> bool:
+    def _check_intersection_over_range(self, bbox_1: List, bbox_2: List,
+                                       axis: str) -> bool:
         """
-        Checks for condition - both x/y minimum  and x/y maximum ranges of
-        bbox_2 is inside bbox_1.
-        @param bbox_1: bounding box1
-        @param bbox_2: bounding box2
-        @param min_index: x or y min position
-        @param max_index: x or y max position
-        @return: Boolean value of the min and max inclusive condition
+        Check if any one of the bounding boxes is inclusive of another. i.e
+        finding x or y range intersection between the bbox_1 and bbox_2,
+        The iou min and max should be within the range of any one of the
+        bounding box for the given axis
+        @param bbox_1: bounding box 1
+        @param bbox_2: bounding box 2
+        @param axis: the axis value - x or y
+        @return: boolean value for the intersection condition
         """
-        if bbox_2[min_index] < bbox_1[min_index]:
-            bbox_1, bbox_2 = bbox_2, bbox_1
-        return (bbox_1[min_index] <= bbox_2[min_index] <= bbox_1[max_index]
-                and bbox_1[min_index] <= bbox_2[max_index] <= bbox_1[max_index])
-
-    def _max_not_intersecting_condition(self, bbox_1: List,
-                                        bbox_2: List,
-                                        min_index: int, max_index: int) -> bool:
-        """
-        Checks for condition x/y minimum range of bbox_2 is inside bbox_1 and
-        x/y maximum range of bbox_2 is not inside the bbox_1.
-        @param bbox_1: bounding box1
-        @param bbox_2: bounding box2
-        @param min_index: x or y min position
-        @param max_index: x or y max position
-        @return: Boolean value of the inclusive condition
-        """
-        if bbox_2[min_index] > bbox_1[min_index]:
-            bbox_1, bbox_2 = bbox_2, bbox_1
-        return (bbox_2[min_index] <= bbox_1[min_index] <= bbox_2[max_index]
-                <= bbox_1[max_index])
-
-    def _min_not_intersecting_condition(self, bbox_1: List,
-                                        bbox_2: List,
-                                        min_index: int, max_index: int) -> bool:
-        """
-        Checks for condition x/y maximum range of bbox_2 is inside bbox_1 and
-        x/y minimum range of bbox_2 is not inside the bbox_1.
-        @param bbox_1: bounding box1
-        @param bbox_2: bounding box2
-        @param min_index: x or y min position
-        @param max_index: x or y max position
-        @return: Boolean value of the inclusive condition
-        """
-        if bbox_2[min_index] < bbox_1[min_index]:
-            bbox_1, bbox_2 = bbox_2, bbox_1
-        return (bbox_1[min_index] <= bbox_2[min_index] <= bbox_1[max_index]
-                <= bbox_2[max_index] and bbox_2[max_index] >= bbox_1[min_index])
-
-    def _bulid_inclusive_condition(self, bbox_1: List, bbox_2: List,
-                                   axis: str) -> bool:
-        """
-        Returns the boolean value of the set of inclusive conditions
-        @param bbox_1: bounding box1
-        @param bbox_2: bounding box2
-        @param axis: x or y
-        @return: Boolean value of the inclusive conditions
-        """
-        min_index = 0
-        max_index = 2
+        min_range, max_range = 0, 2
         if axis == 'y':
-            min_index = 1
-            max_index = 3
-        return (self._min_max_inclusive(bbox_1, bbox_2, min_index, max_index)
-                or self._max_not_intersecting_condition(bbox_1, bbox_2,
-                                                        min_index,
-                                                        max_index)
-                or self._min_not_intersecting_condition(bbox_1, bbox_2,
-                                                        min_index,
-                                                        max_index))
+            min_range, max_range = 1, 3
+        iou_min = max(bbox_1[min_range], bbox_2[min_range])
+        iou_max = min(bbox_1[max_range], bbox_2[max_range])
+        range1 = [bbox_1[min_range], bbox_1[max_range]]
+        range2 = [bbox_2[min_range], bbox_2[max_range]]
+        # checks if iou min and max in inside any one of the ranges
+        if ((range1[0] <= iou_min <= range1[1]
+             and range1[0] <= iou_max <= range1[1])
+                or
+                (range2[0] <= iou_min <= range2[1]
+                 and range2[0] <= iou_max <= range2[1])):
+            return True
+        return False
 
     def horizontal_inclusive(self, bbox_1: List,
                              bbox_2: List) -> bool:
@@ -309,7 +265,7 @@ class RowColumnGrouping(GroupObjects):
         @return: the boolean value of the inclusive condition
         """
         return (bbox_1 and bbox_2) and (
-            self._bulid_inclusive_condition(bbox_1, bbox_2, 'x')
+            self._check_intersection_over_range(bbox_1, bbox_2, 'x')
         )
 
     def vertical_inclusive(self, bbox_1: List,
@@ -324,8 +280,8 @@ class RowColumnGrouping(GroupObjects):
         @return: the boolean value of the inclusive condition
         """
         return (bbox_1 and bbox_2) and (
-            self._bulid_inclusive_condition(bbox_1, bbox_2, 'y')
-            )
+            self._check_intersection_over_range(bbox_1, bbox_2, 'y')
+        )
 
     def row_condition(self, bbox_1: List,
                       bbox_2: List) -> bool:
