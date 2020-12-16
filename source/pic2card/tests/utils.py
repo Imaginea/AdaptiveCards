@@ -7,6 +7,7 @@ os.environ["test_img_path"] = "./tests/test_images/test01.png"
 headers = {"Content-Type": "application/json"}
 payload_empty_dict_data = "{'image': null}"
 payload_data_some_string = "{'image': 'some string'}"
+sample_images = ["test01.png", "test02.png", "test03.png", "test04.png"]
 
 
 def img_to_base64(img_path):
@@ -31,3 +32,13 @@ def get_response(client, api, headers, data):
     """ Returns the response of a post request """
     response = client.post(api, headers=headers, data=data)
     return response
+
+
+def set_image_path(test_image):
+    """ Sets the image_path as sample images path """
+    test_path = os.path.split(os.environ["test_img_path"])[0]
+    result = os.path.join(test_path, test_image)
+    # result = os.path.join(
+    #    os.path.dirname(__file__), "/test_images/", test_image)
+    print(result)
+    return result
