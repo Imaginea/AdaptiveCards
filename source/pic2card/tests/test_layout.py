@@ -2,7 +2,7 @@ from multiprocessing import Queue
 import unittest
 from unittest.mock import patch
 
-from tests.test_variables import (debug_string_test, test_img_obj1,
+from tests.variables import (debug_string_test, test_img_obj1,
                                   test_img_obj2, test_cset_obj1,
                                   test_cset_obj2)
 from mystique.extract_properties import CollectProperties

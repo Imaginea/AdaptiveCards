@@ -105,3 +105,9 @@ class BaseSetUpClass(unittest.TestCase):
         self.test_coord1 = self.json_objects['objects'][0].get("coords", [])
         self.test_coord2 = self.json_objects['objects'][1].get("coords", [])
         self.card_arrange = CardArrange()
+        self._started_at = time.time()
+
+    def tearDown(self):
+        """ To get the elapsed time for each test """
+        elapsed = time.time() - self._started_at
+        print('{} ({}s)'.format(self.id(), round(elapsed, 2)))

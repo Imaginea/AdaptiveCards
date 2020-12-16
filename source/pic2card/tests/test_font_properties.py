@@ -1,5 +1,5 @@
 from tests.base_test_class import BaseSetUpClass
-from tests.test_variables import mock_desing_obj, mock_desing_obj_eq_weight
+from tests.variables import mock_desing_obj, mock_desing_obj_eq_weight
 from mystique.font_properties import classify_font_weights
 
 
