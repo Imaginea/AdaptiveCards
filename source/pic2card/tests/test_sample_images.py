@@ -9,12 +9,12 @@ class TestSampleImages(BaseAPITest):
         for predict_json api.
     """
 
-    @classmethod
-    def setUpClass(cls):
-        super(TestSampleImages, cls).setUpClass()
-        cls.api = "/predict_json"
-        cls.response = get_response(cls.client, cls.api, cls.headers, cls.data)
-        cls.output = json.loads(cls.response.data)
+    def setUp(self):
+        super(TestSampleImages, self).setUp()
+        self.api = "/predict_json"
+        self.response = get_response(self.client, self.api,
+                                     self.headers, self.data)
+        self.output = json.loads(self.response.data)
 
     def test_response(self):
         """ checks if the response is success and not none """
@@ -30,12 +30,11 @@ class TestSampleImagesTemplates(BaseAPITest):
         for get_card_templates api.
     """
 
-    @classmethod
-    def setUpClass(cls):
-        super(TestSampleImagesTemplates, cls).setUpClass()
-        cls.api = "/get_card_templates"
-        cls.response = cls.client.get(cls.api)
-        cls.output = json.loads(cls.response.data)
+    def setUp(self):
+        super(TestSampleImagesTemplates, self).setUp()
+        self.api = "/get_card_templates"
+        self.response = self.client.get(self.api)
+        self.output = json.loads(self.response.data)
 
     def test_response(self):
         """ checks if the response is success and not none """
