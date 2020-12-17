@@ -233,12 +233,12 @@ class RowColumnGrouping(GroupObjects):
 
         The inclusive check has to satisfy 2 conditions:
         1. the iou min and max should be within any one of the 2 bounding boxes
-        2. The intersection probability should be greater than the threshold
+        2. The intersection ratio should be greater than the threshold
         @param bbox_1: bounding box 1
         @param bbox_2: bounding box 2
         @param axis: the axis value - x or y
-        @param threshold: The intersection cut-off probability to
-                          check inclusvive
+        @param threshold: The intersection cut-off ratio to
+                          check inclusive
         @return: boolean value for the intersection condition
         """
         min_range, max_range = 0, 2
@@ -249,7 +249,7 @@ class RowColumnGrouping(GroupObjects):
         iou_size = iou_max - iou_min
 
         range_size = None
-        intersection_prob = 0.0
+        intersection_ratio = 0.0
         range1 = [bbox_1[min_range], bbox_1[max_range]]
         range2 = [bbox_2[min_range], bbox_2[max_range]]
         if (range1[0] <= iou_min <= range1[1]
@@ -260,8 +260,8 @@ class RowColumnGrouping(GroupObjects):
             range_size = range2[1] - range2[0]
 
         if range_size:
-            intersection_prob = iou_size / range_size
-        if range_size and intersection_prob >= threshold:
+            intersection_ratio = iou_size / range_size
+        if range_size and intersection_ratio >= threshold:
             return True
         return False
 
@@ -299,15 +299,25 @@ class RowColumnGrouping(GroupObjects):
             object_one = bbox_1
             object_two = bbox_2
 
-        return (bbox_1 != bbox_2 and (
-            (round(y_min_difference, 2) <= self.Y_MIN_THESHOLD + 0.010)
-            or ((object_one and object_two)
-                and self._check_intersection_over_range(bbox_1, bbox_2, 'y'))
-            or (round(y_diff, 2) < self.Y_THRESHOLD
-                and ((object_one and object_two)
-                     and self._check_intersection_over_range(bbox_1, bbox_2,
-                                                             'x'))
-                )))
+        y_minimum_condition = (round(y_min_difference, 2)
+                               <= self.Y_MIN_THESHOLD + 0.010)
+
+        vertical_inclusive = False
+        horizontal_inclusive = False
+
+        if object_one and object_two:
+            vertical_inclusive = self._check_intersection_over_range(bbox_1,
+                                                                     bbox_2,
+                                                                     'y')
+            horizontal_inclusive = self._check_intersection_over_range(bbox_1,
+                                                                       bbox_2,
+                                                                       'x')
+        horizontal_inclusive = (round(y_diff, 2) < self.Y_THRESHOLD
+                                and horizontal_inclusive)
+
+        return (bbox_1 != bbox_2 and (y_minimum_condition
+                                      or vertical_inclusive
+                                      or horizontal_inclusive))
 
     def _get_highest_range_object(self, bbox_1: List, bbox_2: List,
                                   min_way: int,
@@ -381,17 +391,18 @@ class RowColumnGrouping(GroupObjects):
             object_one = bbox_2
             object_two = bbox_1
 
+        y_minimum_condition = round(y_min_difference, 2) <= self.Y_MIN_THESHOLD
+        x_minimum_condition = round(x_diff, 2) <= self.X_THRESHOLD
+        images_check = (bbox_1[4] == "image" and bbox_2[4] == "image"
+                        and y_minimum_condition
+                        and x_minimum_condition)
+        horizontal_inclusive = False
+        if object_one and object_two:
+            horizontal_inclusive = self._check_intersection_over_range(bbox_1,
+                                                                       bbox_2,
+                                                                       'x')
         condition = (bbox_1 != bbox_2
-                     and ((bbox_1[4] == "image"
-                           and bbox_2[4] == "image"
-                           and round(y_min_difference, 2) <= self.Y_MIN_THESHOLD
-                           and round(x_diff, 2) <= self.X_THRESHOLD)
-                          or ((object_one and object_two)
-                              and self._check_intersection_over_range(bbox_1,
-                                                                      bbox_2,
-                                                                      'x'))
-                          )
-                     )
+                     and (images_check or horizontal_inclusive))
 
         object_one, object_two = self._get_highest_range_object(bbox_1,
                                                                 bbox_2,
