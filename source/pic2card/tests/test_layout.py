@@ -15,7 +15,7 @@ from mystique.card_layout import row_column_group
 from mystique.card_layout.ds_helper import DsHelper
 from mystique.card_layout import bbox_utils
 
-from .base_test_class import BaseSetUpClass
+from tests.base_test_class import BaseSetUpClass
 
 
 class TestIOU(BaseSetUpClass):
