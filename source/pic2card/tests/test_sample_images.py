@@ -1,15 +1,14 @@
 import json
 from tests.utils import get_response
-from tests.test_predict_json import PredictJsonTestAPITemplate
+from tests.test_predict_json import BaseAPITest
 
 
-class TestSampleImages(PredictJsonTestAPITemplate):
+class TestSampleImages(BaseAPITest):
     """ Basic Tests that run for a list of sample images
         for predict_json api.
     """
 
     def setUp(self):
-        super(TestSampleImages, self).setUp()
         self.templates_api = "/get_card_templates"
         self.templates_response = self.client.get(self.templates_api)
         self.templates_output = json.loads(self.templates_response.data)

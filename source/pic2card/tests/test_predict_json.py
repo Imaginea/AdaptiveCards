@@ -6,19 +6,7 @@ from tests.base_test_class import BaseAPITest
 from tests.utils import get_response
 
 
-class PredictJsonTestAPITemplate(BaseAPITest):
-    """ Setup class template for predict_json api """
-
-    @classmethod
-    def setUpClass(cls):
-        super(PredictJsonTestAPITemplate, cls).setUpClass()
-        cls.api = "/predict_json"
-        cls.response = get_response(cls.client, cls.api, cls.headers,
-                                    cls.data)
-        cls.output = json.loads(cls.response.data)
-
-
-class PredictJsonTestAPI(PredictJsonTestAPITemplate):
+class PredictJsonTestAPI(BaseAPITest):
     """ tests for predict_json api """
 
     def test_status_code(self):
