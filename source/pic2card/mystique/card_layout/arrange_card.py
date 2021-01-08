@@ -121,9 +121,9 @@ class CardArrange:
         self.column_coords_min[3] = []
         for ctr, design_objects in enumerate(columns):
             colummn_set["columns"].append({
-                    "type": "Column",
-                    "width": "stretch",
-                    "items": []
+                "type": "Column",
+                "width": "stretch",
+                "items": []
             })
             design_objects = sorted(design_objects, key=lambda i: i["ymin"])
             all_columns_value = [[]] * 4
@@ -141,13 +141,13 @@ class CardArrange:
                         radio_buttons_dict["columnset"] = radio_buttons_dict[
                             "columnset"].fromkeys([ctr], {})
                     radio_buttons_dict["columnset"][ctr].update(
-                            {ctr1: design_object})
+                        {ctr1: design_object})
                 elif design_object.get("object") == "image":
                     image_objects_columns.append(design_object)
                 else:
                     self.append_objects(
-                            design_object, colummn_set["columns"][ctr].get(
-                                    "items", []))
+                        design_object, colummn_set["columns"][ctr].get(
+                            "items", []))
                     # collect the coords value for the deisgn objects
                     all_columns_value[0].append(design_object.get("xmin"))
                     all_columns_value[1].append(design_object.get("ymin"))
@@ -158,10 +158,10 @@ class CardArrange:
             if len(image_objects_columns) > 0:
                 (image_objects_columns,
                  imageset_coords) = image_grouping.group_image_objects(
-                        image_objects_columns,
-                        colummn_set["columns"][ctr].get("items"),
-                        image_objects_columns,
-                        is_column=True)
+                     image_objects_columns,
+                     colummn_set["columns"][ctr].get("items"),
+                     image_objects_columns,
+                     is_column=True)
                 if imageset_coords:
                     all_columns_value[0].append(imageset_coords[0])
                     all_columns_value[1].append(imageset_coords[1])
@@ -172,8 +172,8 @@ class CardArrange:
                 # individual images to the card json
                 for item in image_objects_columns:
                     self.append_objects(
-                            item,
-                            colummn_set["columns"][ctr].get("items", [])
+                        item,
+                        colummn_set["columns"][ctr].get("items", [])
                     )
 
                     all_columns_value[0].append(item.get("xmin"))
@@ -186,18 +186,18 @@ class CardArrange:
                     and ctr <= len(colummn_set["columns"])
                     and ctr in list(radio_buttons_dict["columnset"].keys())):
                 choiceset_grouping.group_choicesets(
-                        radio_buttons_dict["columnset"][ctr],
-                        colummn_set["columns"][ctr].get("items",
-                                                        []))
+                    radio_buttons_dict["columnset"][ctr],
+                    colummn_set["columns"][ctr].get("items",
+                                                    []))
                 key = next(iter(radio_buttons_dict["columnset"][ctr]))
                 all_columns_value[0].append(
-                        radio_buttons_dict["columnset"][ctr][key].get("xmin"))
+                    radio_buttons_dict["columnset"][ctr][key].get("xmin"))
                 all_columns_value[1].append(
-                        radio_buttons_dict["columnset"][ctr][key].get("ymin"))
+                    radio_buttons_dict["columnset"][ctr][key].get("ymin"))
                 all_columns_value[2].append(
-                        radio_buttons_dict["columnset"][ctr][key].get("xmax"))
+                    radio_buttons_dict["columnset"][ctr][key].get("xmax"))
                 all_columns_value[3].append(
-                        radio_buttons_dict["columnset"][ctr][key].get("ymax"))
+                    radio_buttons_dict["columnset"][ctr][key].get("ymax"))
             # get the max value of the collected column coordinates
             self.column_coords[0].append(max(all_columns_value[0]))
             self.column_coords[1].append(max(all_columns_value[1]))
@@ -212,9 +212,9 @@ class CardArrange:
             # sort the design objects within the columns of the
             # columnset based on ymin values
             colummn_set["columns"][ctr]["items"] = [x for _, x in sorted(
-                    zip(all_columns_value[1],
-                        colummn_set["columns"][ctr]["items"]),
-                    key=lambda x: x[0])]
+                zip(all_columns_value[1],
+                    colummn_set["columns"][ctr]["items"]),
+                key=lambda x: x[0])]
 
     def arrange_columns(self, columns: List[Dict], radio_buttons_dict: Dict,
                         body: List[Dict], ymins: List,
@@ -232,8 +232,8 @@ class CardArrange:
         """
         container_properties = ContainerProperties()
         colummn_set = {
-                "type": "ColumnSet",
-                "columns": []
+            "type": "ColumnSet",
+            "columns": []
         }
         # add individual items and radiobuttons inside the column
         self.add_column_objects(columns, radio_buttons_dict, colummn_set)
@@ -250,19 +250,19 @@ class CardArrange:
 
             # sort the columnset columns based on xmin values
             colummn_set["columns"] = [x for _, x in sorted(
-                    zip(self.column_coords[0], colummn_set["columns"]),
-                    key=lambda x: x[0])]
+                zip(self.column_coords[0], colummn_set["columns"]),
+                key=lambda x: x[0])]
 
             # sort the collected columns coords for column width extraction
             self.column_coords[2] = [x for _, x in sorted(
-                    zip(self.column_coords[0], self.column_coords[2]),
-                    key=lambda x: x[0])]
+                zip(self.column_coords[0], self.column_coords[2]),
+                key=lambda x: x[0])]
             self.column_coords_min[2] = [x for _, x in sorted(
-                    zip(self.column_coords[0], self.column_coords_min[2]),
-                    key=lambda x: x[0])]
+                zip(self.column_coords[0], self.column_coords_min[2]),
+                key=lambda x: x[0])]
             self.column_coords_min[0] = [x for _, x in sorted(
-                    zip(self.column_coords[0], self.column_coords_min[0]),
-                    key=lambda x: x[0])]
+                zip(self.column_coords[0], self.column_coords_min[0]),
+                key=lambda x: x[0])]
 
             self.column_coords[0] = sorted(self.column_coords[0])
             # collect column and columnset alignment property and column's width
@@ -286,10 +286,9 @@ class CardArrange:
         body = []
         ymins = []
         # group all objects into columnset or individual objects
-        groups = columns_grouping.object_grouping(
-                objects,
-                columns_grouping.row_condition
-        )
+        groups = columns_grouping.object_grouping_old(
+            objects,
+            columns_grouping.row_condition)
         radio_buttons_dict = {"normal": []}
 
         image_objects = []
@@ -309,9 +308,9 @@ class CardArrange:
             # if the group is a columnset
             elif len(group) > 1:
                 # group the columnset objects into different columns
-                columns = columns_grouping.object_grouping(
-                        group,
-                        columns_grouping.column_condition
+                columns = columns_grouping.object_grouping_old(
+                    group,
+                    columns_grouping.column_condition
                 )
                 self.arrange_columns(columns, radio_buttons_dict, body, ymins,
                                      group, image)
@@ -319,7 +318,7 @@ class CardArrange:
         # the column-sets.
         if len(radio_buttons_dict["normal"]) > 0:
             choiceset_grouping.group_choicesets(
-                    radio_buttons_dict["normal"], body, ymins=ymins)
+                radio_buttons_dict["normal"], body, ymins=ymins)
         if len(image_objects) > 0:
             image_objects = image_grouping.group_image_objects(image_objects,
                                                                body,

@@ -5,6 +5,7 @@ from unittest.mock import patch
 from tests.variables import (debug_string_test, test_img_obj1,
                              test_img_obj2, test_cset_obj1,
                              test_cset_obj2)
+from tests.base_test_class import BaseSetUpClass
 from mystique.extract_properties import CollectProperties
 from mystique.ac_export.adaptive_card_export import (
     AdaptiveCardExport)
@@ -14,8 +15,6 @@ from mystique.card_layout.objects_group import (RowColumnGrouping,
 from mystique.card_layout import row_column_group
 from mystique.card_layout.ds_helper import DsHelper
 from mystique.card_layout import bbox_utils
-
-from tests.base_test_class import BaseSetUpClass
 
 
 class TestIOU(BaseSetUpClass):
@@ -46,8 +45,8 @@ class TestIOU(BaseSetUpClass):
         """
         card_json, y_mins = self.card_arrange.build_card_json(
             self.json_objects["objects"], self.image)
-        self.assertEqual(len(card_json), 14)
-        self.assertEqual(len(y_mins), 14)
+        self.assertEqual(len(card_json), 13)
+        self.assertEqual(len(y_mins), 13)
 
     def test_find_iou_overlap_false(self):
         """Tests the overlap between the given objects coordinates"""
@@ -80,7 +79,7 @@ class TestLayoutStructure(BaseSetUpClass):
         new_layout = row_column_group.generate_card_layout(self.json_objects,
                                                            self.image,
                                                            self.model_instance)
-        self.assertEqual(len(new_layout), 14)
+        self.assertEqual(len(new_layout), 13)
         self.assertEqual(type(new_layout).__name__, "list")
 
     @patch('mystique.config.NEW_LAYOUT_STRUCTURE', True)

@@ -3,7 +3,6 @@ from operator import itemgetter
 from typing import List, Dict, Callable, Tuple, Optional
 
 from mystique import config
-from mystique.card_layout import bbox_utils
 
 
 class GroupObjects:
@@ -50,9 +49,25 @@ class GroupObjects:
         else:
             return 0
 
-    def object_grouping(self, design_objects: List[Dict],
-                        condition: Callable[[List, List],
-                                            bool]) -> List[List[Dict]]:
+    def _update_coords(self, previous_coords: List,
+                       current_coords: List) -> List:
+        """
+        Update the container/group coordinates by extending the previous
+        coords with the current one by taking min(xmin and ymin) and max(
+        xmax,yamx).
+        @param previous_coords: Group coodinates
+        @param current_coords: Current design object coordinates
+        @return: Updated coordinates for the group
+        """
+
+        return [min(previous_coords[0], current_coords[0]),
+                min(previous_coords[1], current_coords[1]),
+                max(previous_coords[2], current_coords[2]),
+                max(previous_coords[3], current_coords[3])]
+
+    def object_grouping_old(self, design_objects: List[Dict],
+                            condition: Callable[[List, List],
+                                                bool]) -> List[List[Dict]]:
         """
         Groups the given List of design objects for the any given condition.
         @param design_objects: objects
@@ -103,6 +118,103 @@ class GroupObjects:
                 groups.append([design_object])
         return groups
 
+    def object_grouping(self, design_objects: List[Dict],
+                        condition: Callable[[List, List],
+                                            bool]) -> List[List[Dict]]:
+        """
+        Groups the given List of design objects for the any given condition.
+        @param design_objects: objects
+        @param condition: Grouping condition function
+        @return: Grouped list of design objects.
+        """
+        groups = []
+        for ctr, design_object in enumerate(design_objects):
+            if not groups:
+                objects = {
+                    "objects": [design_object],
+                    "coordinates": design_object.get(
+                        "coords", design_object.get("coordinates"))
+                }
+                groups.append(objects)
+            elif groups:
+
+                bbox_1 = list(groups[-1].get("coordinates"))
+                bbox_2 = list(design_object.get(
+                    "coords", design_object.get("coordinates")))
+                object_names = [obj.get("object") for obj in
+                                groups[-1].get("objects")]
+                if "image" in object_names:
+                    bbox_1.append("image")
+                else:
+                    bbox_1.append("group")
+                bbox_2.append(design_object.get("object", ""))
+
+                if condition(bbox_1, bbox_2):
+                    objects = groups[-1].get("objects")
+                    if design_object not in objects:
+                        objects.append(design_object)
+                        coordinates = self._update_coords(bbox_1, bbox_2)
+                        groups[-1].update({
+                            "objects": objects,
+                            "coordinates": coordinates
+                        })
+                else:
+                    objects = {
+                        "objects": [design_object],
+                        "coordinates": design_object.get(
+                            "coords", design_object.get("coordinates"))
+                    }
+                    groups.append(objects)
+        groups = [gr.get("objects") for gr in groups]
+        return groups
+
+    def _check_intersection_over_range(self, bbox_1: List, bbox_2: List,
+                                       axis: str, threshold=0.25,
+                                       get_ratio=False) -> bool:
+        """
+        Check if any one of the bounding boxes is inclusive of another. i.e
+        finding x or y range intersection between the bbox_1 and bbox_2
+        The inclusive check has to satisfy 2 conditions:
+        1. the iou min and max should be within any one of the 2 bounding boxes
+        2. The intersection ratio should be greater than the threshold
+        @param bbox_1: bounding box 1
+        @param bbox_2: bounding box 2
+        @param axis: the axis value - x or y
+        @param threshold: The intersection cut-off ratio to
+                          check inclusive
+        @return: boolean value for the intersection condition
+        """
+        min_range, max_range = 0, 2
+        if axis == 'y':
+            min_range, max_range = 1, 3
+        iou_min = max(bbox_1[min_range], bbox_2[min_range])
+        iou_max = min(bbox_1[max_range], bbox_2[max_range])
+        iou_size = iou_max - iou_min
+
+        range_size = None
+        range1 = [bbox_1[min_range], bbox_1[max_range]]
+        range2 = [bbox_2[min_range], bbox_2[max_range]]
+        if (range1[0] <= iou_min <= range1[1]
+                and range1[0] <= iou_max <= range1[1]):
+            range_size = range1[1] - range1[0]
+        elif (range2[0] <= iou_min <= range2[1]
+              and range2[0] <= iou_max <= range2[1]):
+            range_size = range2[1] - range2[0]
+        intersection_area_ratio = 0
+        if ((bbox_1[2] - bbox_1[0]) * (bbox_1[3] - bbox_1[1])) <= (
+                (bbox_2[2] - bbox_2[0]) * (bbox_2[3] - bbox_2[1])):
+            intersection_area_ratio = iou_size / (range1[1] - range1[0])
+
+        else:
+            intersection_area_ratio = iou_size / (range2[1] - range2[0])
+
+        if get_ratio:
+            return intersection_area_ratio
+
+        if range_size and intersection_area_ratio >= threshold:
+            return True
+        return False
+
 
 class ImageGrouping(GroupObjects):
     """
@@ -136,8 +248,13 @@ class ImageGrouping(GroupObjects):
                                          bbox_2,
                                          min_way=0,
                                          max_way=2)
-        return (round(y_min_difference, 2) <= self.Y_MIN_THRESHOLD
-                and round(x_diff, 2) <= self.X_THRESHOLD)
+        return (
+            (self._check_intersection_over_range(bbox_1, bbox_2, "y")
+             or round(y_min_difference, 2) <= self.Y_MIN_THRESHOLD)
+            and
+            (self._check_intersection_over_range(bbox_1, bbox_2, "x")
+             or round(x_diff, 2) <= self.X_THRESHOLD)
+        )
 
     def group_image_objects(self, image_objects, body, objects, ymins=None,
                             is_column=None) -> [List, Optional[Tuple]]:
@@ -157,7 +274,8 @@ class ImageGrouping(GroupObjects):
                  with its coordinate values.
         """
         # group the image objects based on ymin
-        groups = self.object_grouping(image_objects, self.imageset_condition)
+        groups = self.object_grouping_old(image_objects,
+                                          self.imageset_condition)
         delete_positions = []
         design_object_coords = []
         for group in groups:
@@ -225,46 +343,6 @@ class RowColumnGrouping(GroupObjects):
     def __init__(self, card_arrange=None):
         self.card_arrange = card_arrange
 
-    def _check_intersection_over_range(self, bbox_1: List, bbox_2: List,
-                                       axis: str, threshold=0.1) -> bool:
-        """
-        Check if any one of the bounding boxes is inclusive of another. i.e
-        finding x or y range intersection between the bbox_1 and bbox_2
-
-        The inclusive check has to satisfy 2 conditions:
-        1. the iou min and max should be within any one of the 2 bounding boxes
-        2. The intersection ratio should be greater than the threshold
-        @param bbox_1: bounding box 1
-        @param bbox_2: bounding box 2
-        @param axis: the axis value - x or y
-        @param threshold: The intersection cut-off ratio to
-                          check inclusive
-        @return: boolean value for the intersection condition
-        """
-        min_range, max_range = 0, 2
-        if axis == 'y':
-            min_range, max_range = 1, 3
-        iou_min = max(bbox_1[min_range], bbox_2[min_range])
-        iou_max = min(bbox_1[max_range], bbox_2[max_range])
-        iou_size = iou_max - iou_min
-
-        range_size = None
-        intersection_ratio = 0.0
-        range1 = [bbox_1[min_range], bbox_1[max_range]]
-        range2 = [bbox_2[min_range], bbox_2[max_range]]
-        if (range1[0] <= iou_min <= range1[1]
-                and range1[0] <= iou_max <= range1[1]):
-            range_size = range1[1] - range1[0]
-        elif (range2[0] <= iou_min <= range2[1]
-              and range2[0] <= iou_max <= range2[1]):
-            range_size = range2[1] - range2[0]
-
-        if range_size:
-            intersection_ratio = iou_size / range_size
-        if range_size and intersection_ratio >= threshold:
-            return True
-        return False
-
     def row_condition(self, bbox_1: List,
                       bbox_2: List) -> bool:
         """
@@ -284,28 +362,13 @@ class RowColumnGrouping(GroupObjects):
         y_min_difference = y_min_difference / (
             abs(object_two[1] - object_one[3]))
 
-        object_one = None
-        object_two = None
-        if (bbox_1[4] == "image"
-                and bbox_2[4] != "image"):
-            object_one = bbox_1
-            object_two = bbox_2
-        elif (bbox_2[4] == "image"
-              and bbox_1[4] != "image"):
-            object_one = bbox_2
-            object_two = bbox_1
-        elif (bbox_2[4] == "image"
-              and bbox_1[4] == "image"):
-            object_one = bbox_1
-            object_two = bbox_2
-
         y_minimum_condition = (round(y_min_difference, 2)
                                <= self.Y_MIN_THESHOLD + 0.010)
 
         vertical_inclusive = False
         horizontal_inclusive = False
 
-        if object_one and object_two:
+        if bbox_1 and bbox_2:
             vertical_inclusive = self._check_intersection_over_range(bbox_1,
                                                                      bbox_2,
                                                                      'y')
@@ -404,30 +467,6 @@ class RowColumnGrouping(GroupObjects):
         condition = (bbox_1 != bbox_2
                      and (images_check or horizontal_inclusive))
 
-        object_one, object_two = self._get_highest_range_object(bbox_1,
-                                                                bbox_2,
-                                                                min_way=1,
-                                                                max_way=3)
-        x_way_overlap = (
-            object_one[1] <= object_two[1] <= object_one[3]
-            or object_one[1] <= object_two[3] <= object_one[3])
-        object_one, object_two = self._get_highest_range_object(bbox_1,
-                                                                bbox_2,
-                                                                min_way=0,
-                                                                max_way=2)
-        y_way_overlap = (
-            object_one[0] <= object_two[0] <= object_one[2]
-            or object_one[0] <= object_two[2] <= object_one[2])
-        intersection = bbox_utils.find_iou(bbox_1, bbox_2, columns_group=True)
-        if intersection[0] and bbox_1 != bbox_2:
-            if x_way_overlap and y_way_overlap:
-                x_way_overlap_distance = intersection[1]
-                y_way_overlap_distance = intersection[2]
-                condition = self.check_overlap_ties(
-                    bbox_1, bbox_2, x_way_overlap_distance,
-                    y_way_overlap_distance)
-            else:
-                condition = condition and y_way_overlap
         return condition
 
 
@@ -454,20 +493,13 @@ class ChoicesetGrouping(GroupObjects):
         @param bbox_2: radiobutton object two coordinates
         @return: boolean value
         """
-        y_min_difference = abs(bbox_1[1] - bbox_2[1])
-
-        if bbox_1[1] < bbox_2[1]:
-            y_min_difference = y_min_difference / (abs(bbox_1[1] -
-                                                       bbox_2[3]))
-        else:
-            y_min_difference = y_min_difference / (
-                abs(bbox_2[1] - bbox_1[3]))
         y_diff = self.max_min_difference(bbox_1,
                                          bbox_2,
                                          min_way=1, max_way=3)
 
-        return (round(y_diff, 2) <= self.Y_THRESHOLD
-                and round(y_min_difference, 2) <= self.Y_MIN_THRESHOLD)
+        return (self._check_intersection_over_range(bbox_1, bbox_2, "x")
+                and (round(y_diff, 2) <= self.Y_THRESHOLD or
+                     round(y_diff, 2) >= 1))
 
     def group_choicesets(self, radiobutton_objects: Dict, body: List[Dict],
                          ymins=None) -> None:
@@ -489,8 +521,8 @@ class ChoicesetGrouping(GroupObjects):
             # radiobutton_objects = [radiobutton_objects]
             groups = [radiobutton_objects]
         if not groups:
-            groups = self.object_grouping(radiobutton_objects,
-                                          self.choiceset_condition)
+            groups = self.object_grouping_old(radiobutton_objects,
+                                              self.choiceset_condition)
         for group in groups:
             group = sorted(group, key=itemgetter("ymin"))
             choice_set = {
