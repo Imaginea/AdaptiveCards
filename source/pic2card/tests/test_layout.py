@@ -37,17 +37,6 @@ class TestIOU(BaseSetUpClass):
                                                              self.image)
         self.assertEqual(extracted_sizes, ["Small", "Small"])
 
-    @patch('mystique.config.NEW_LAYOUT_STRUCTURE', False)
-    def test_build_card_json(self):
-        """
-        Tests the length of the card json and the
-         y mininum coordinates List built
-        """
-        card_json, y_mins = self.card_arrange.build_card_json(
-            self.json_objects["objects"], self.image)
-        self.assertEqual(len(card_json), 13)
-        self.assertEqual(len(y_mins), 13)
-
     def test_find_iou_overlap_false(self):
         """Tests the overlap between the given objects coordinates"""
         collect = bbox_utils.find_iou(
@@ -71,7 +60,6 @@ class TestLayoutStructure(BaseSetUpClass):
         self.test_queue = Queue()
         self.export_card = AdaptiveCardExport()
 
-    @patch('mystique.config.NEW_LAYOUT_STRUCTURE', True)
     def test_new_layout_generation(self):
         """
         Tests the generated layout length and datatype for the given test image
@@ -82,7 +70,6 @@ class TestLayoutStructure(BaseSetUpClass):
         self.assertEqual(len(new_layout), 13)
         self.assertEqual(type(new_layout).__name__, "list")
 
-    @patch('mystique.config.NEW_LAYOUT_STRUCTURE', True)
     def test_build_adaptive_card(self):
         """
         Tests the adaptive card builded using the testing Format
@@ -106,7 +93,7 @@ class TestColumnsGrouping(BaseSetUpClass):
 
     def setUp(self):
         super().setUp()
-        self.groupobj = RowColumnGrouping(card_arrange=self.card_arrange)
+        self.groupobj = RowColumnGrouping()
 
     def test_horizontal_inclusive(self):
         """ Tests for the horizontal inclusion of two design objects """
@@ -146,7 +133,7 @@ class TestImageGrouping(BaseSetUpClass):
 
     def test_imageset_condition(self):
         """ Tests if images are in imageset """
-        groupobj = ImageGrouping(self.card_arrange)
+        groupobj = ImageGrouping()
         condition_true = groupobj.imageset_condition(test_img_obj1,
                                                      test_img_obj2)
         condition_false = groupobj.imageset_condition(self.test_coord1,
@@ -160,7 +147,7 @@ class TestChoiceSetGrouping(BaseSetUpClass):
 
     def test_choiceset_condition(self):
         """ Tests if choice set obj are in choiceset """
-        groupobj = ChoicesetGrouping(self.card_arrange)
+        groupobj = ChoicesetGrouping()
         condition_true = groupobj.choiceset_condition(test_cset_obj1,
                                                       test_cset_obj2)
         condition_false = groupobj.choiceset_condition(self.test_coord1,

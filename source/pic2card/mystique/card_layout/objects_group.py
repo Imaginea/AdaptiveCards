@@ -1,6 +1,5 @@
 """Module for grouping deisgn objects into different containers"""
-from operator import itemgetter
-from typing import List, Dict, Callable, Tuple, Optional
+from typing import List, Dict, Callable, Tuple
 
 from mystique import config
 
@@ -65,64 +64,36 @@ class GroupObjects:
                 max(previous_coords[2], current_coords[2]),
                 max(previous_coords[3], current_coords[3])]
 
-    def object_grouping_old(self, design_objects: List[Dict],
-                            condition: Callable[[List, List],
-                                                bool]) -> List[List[Dict]]:
+    def update_group_objects(self, design_objects: Dict,
+                             coordinates=None) -> Dict:
         """
-        Groups the given List of design objects for the any given condition.
-        @param design_objects: objects
-        @param condition: Grouping condition function
-        @return: Grouped list of design objects.
+        Build the design group element based on the passed set of design objects
+        and coordinates.
+        @param design_objects: set of design objects to be added to the group
+        @param coordinates: list of coordinates to be added to the group
+        @return: Build group element
         """
-        groups = []
-        grouped_positions = []
-        for ctr1, design_object1 in enumerate(design_objects):
-            temp_list = []
-            for ctr2, design_object2 in enumerate(design_objects):
-                bbox_1 = list(design_object1.get(
-                    "coords", design_object1.get("coordinates")))
-                bbox_2 = list(design_object2.get(
-                    "coords", design_object2.get("coordinates")))
-                bbox_1.append(design_object1.get("object", ""))
-                bbox_2.append(design_object2.get("object", ""))
-                if condition(bbox_1, bbox_2):
-                    present = False
-                    present_position = -1
-                    append_object = False
-                    append_position = -1
-                    for ctr, gr in enumerate(groups):
-                        if design_object2 in gr:
-                            present = True
-                            present_position = ctr
-                        if design_object1 in gr:
-                            append_object = True
-                            append_position = ctr
-                    if not present and not append_object:
-                        temp_list.append(design_object2)
-                        grouped_positions.append(ctr2)
-                    elif not present and append_object:
-                        groups[append_position].append(design_object2)
-                        grouped_positions.append(ctr2)
-                    elif present and not append_object:
-                        groups[present_position].append(design_object1)
-                        grouped_positions.append(ctr1)
-                    elif (present and append_object and
-                          present_position != append_position):
-                        groups[present_position] += groups[append_position]
-                        del groups[append_position]
-            if temp_list:
-                groups.append(temp_list)
-
-        for ctr, design_object in enumerate(design_objects):
-            if ctr not in grouped_positions:
-                groups.append([design_object])
-        return groups
+        if coordinates:
+            return {
+                "objects": design_objects,
+                "coordinates": coordinates
+            }
+        else:
+            return {
+                "objects": [design_objects],
+                "coordinates": design_objects.get(
+                    "coords", design_objects.get("coordinates"))
+            }
 
     def object_grouping(self, design_objects: List[Dict],
                         condition: Callable[[List, List],
                                             bool]) -> List[List[Dict]]:
         """
         Groups the given List of design objects for the any given condition.
+        Traverse through the x/y based sorted list of design objects and
+        groups them based on the passed conditions and while grouping
+        updates the grouped list of object's coordinates for each element
+        addition.
         @param design_objects: objects
         @param condition: Grouping condition function
         @return: Grouped list of design objects.
@@ -130,14 +101,8 @@ class GroupObjects:
         groups = []
         for ctr, design_object in enumerate(design_objects):
             if not groups:
-                objects = {
-                    "objects": [design_object],
-                    "coordinates": design_object.get(
-                        "coords", design_object.get("coordinates"))
-                }
-                groups.append(objects)
-            elif groups:
-
+                groups.append(self.update_group_objects(design_object))
+            if groups:
                 bbox_1 = list(groups[-1].get("coordinates"))
                 bbox_2 = list(design_object.get(
                     "coords", design_object.get("coordinates")))
@@ -154,17 +119,14 @@ class GroupObjects:
                     if design_object not in objects:
                         objects.append(design_object)
                         coordinates = self._update_coords(bbox_1, bbox_2)
-                        groups[-1].update({
-                            "objects": objects,
-                            "coordinates": coordinates
-                        })
+                        groups[-1].update(self.update_group_objects(
+                            objects, coordinates=coordinates))
                 else:
-                    objects = {
-                        "objects": [design_object],
-                        "coordinates": design_object.get(
-                            "coords", design_object.get("coordinates"))
-                    }
-                    groups.append(objects)
+
+                    if design_object not in groups[-1].get("objects"):
+                        groups.append(self.update_group_objects(design_object))
+        # TODO: this updated coordinates removal will be removed after the
+        #  row-column grouping optimization works
         groups = [gr.get("objects") for gr in groups]
         return groups
 
@@ -197,8 +159,8 @@ class GroupObjects:
         if (range1[0] <= iou_min <= range1[1]
                 and range1[0] <= iou_max <= range1[1]):
             range_size = range1[1] - range1[0]
-        elif (range2[0] <= iou_min <= range2[1]
-              and range2[0] <= iou_max <= range2[1]):
+        if (range2[0] <= iou_min <= range2[1]
+                and range2[0] <= iou_max <= range2[1]):
             range_size = range2[1] - range2[0]
         intersection_area_ratio = 0
         if ((bbox_1[2] - bbox_1[0]) * (bbox_1[3] - bbox_1[1])) <= (
@@ -255,81 +217,6 @@ class ImageGrouping(GroupObjects):
             (self._check_intersection_over_range(bbox_1, bbox_2, "x")
              or round(x_diff, 2) <= self.X_THRESHOLD)
         )
-
-    def group_image_objects(self, image_objects, body, objects, ymins=None,
-                            is_column=None) -> [List, Optional[Tuple]]:
-        """
-        Groups the image objects into image-sets which are in
-        closer ymin range.
-        @param image_objects: list of image objects
-        @param body: list card deisgn elements.
-        @param ymins: list of ymins of card design
-                                  elements
-        @param objects: list of all design objects
-        @param is_column: boolean value to check if an object is inside a
-        columnset or not
-        @return: List of remaining image objects after the grouping if the
-                 grouping is done outside the columnset container
-                 else returned list of remaining image objects along
-                 with its coordinate values.
-        """
-        # group the image objects based on ymin
-        groups = self.object_grouping_old(image_objects,
-                                          self.imageset_condition)
-        delete_positions = []
-        design_object_coords = []
-        for group in groups:
-            group = [dict(t) for t in {tuple(d.items()) for d in group}]
-            # group = self.remove_duplicates(group)
-            if len(group) > 1:
-                group = sorted(group, key=lambda i: i["xmin"])
-                image_set = {
-                    "type": "ImageSet",
-                    "imageSize": "Auto",
-                    "images": []
-                }
-                sizes = []
-                alignment = []
-                image_xmins = []
-                for ctr, design_object in enumerate(group):
-                    index = objects.index(design_object)
-                    if index not in delete_positions:
-                        delete_positions.append(index)
-                    sizes.append(design_object.get("size", "Auto"))
-                    alignment.append(design_object.get(
-                        "horizontal_alignment", "Left"))
-                    image_xmins.append(design_object["xmin"])
-                    self.card_arrange.append_objects(design_object,
-                                                     image_set["images"])
-                image_set["images"] = [x for _, x in sorted(
-                    zip(image_xmins,
-                        image_set["images"]),
-                    key=lambda x: x[0])]
-                # Assign the imageset's size and alignment property based on
-                # each image's alignment and size properties inside the imgaeset
-                image_set["imageSize"] = max(set(sizes), key=sizes.count)
-                preference_order = ["Left", "Center", "Right"]
-                if len(alignment) == len(list(set(alignment))):
-                    alignment.sort(key=(preference_order + alignment).index)
-                    image_set["horizontalAlignment"] = alignment[0]
-                else:
-                    image_set["horizontalAlignment"] = max(set(alignment),
-                                                           key=alignment.count)
-                image_set["coords"] = str(group[0])
-                body.append(image_set)
-                if ymins:
-                    ymins.append(design_object["ymin"])
-                if is_column:
-                    design_object_coords.append(group[0]["xmin"])
-                    design_object_coords.append(group[0]["ymin"])
-                    design_object_coords.append(group[0]["xmax"])
-                    design_object_coords.append(group[0]["ymax"])
-        objects = [design_objects for ctr, design_objects in enumerate(objects)
-                   if ctr not in delete_positions]
-        if is_column:
-            return objects, design_object_coords
-        else:
-            return objects
 
 
 class RowColumnGrouping(GroupObjects):
@@ -481,7 +368,7 @@ class ChoicesetGrouping(GroupObjects):
     Y_MIN_THRESHOLD = config.CONTAINER_GROUPING.get(
         "choiceset_y_min_difference")
 
-    def __init__(self, card_arrange):
+    def __init__(self, card_arrange=None):
         self.card_arrange = card_arrange
 
     def choiceset_condition(self, bbox_1: List,
@@ -500,56 +387,3 @@ class ChoicesetGrouping(GroupObjects):
         return (self._check_intersection_over_range(bbox_1, bbox_2, "x")
                 and (round(y_diff, 2) <= self.Y_THRESHOLD or
                      round(y_diff, 2) >= 1))
-
-    def group_choicesets(self, radiobutton_objects: Dict, body: List[Dict],
-                         ymins=None) -> None:
-        """
-        Groups the choice elements into choicesets based on
-        the closer ymin range
-        @param radiobutton_objects: list of individual choice
-                                                 elements
-        @param body: list of card deisgn elements
-        @param ymins: list of ymin of deisgn elements
-        """
-        groups = []
-        radio_buttons = []
-        if isinstance(radiobutton_objects, dict):
-            for key, values in radiobutton_objects.items():
-                radio_buttons.append(values)
-            radiobutton_objects = radio_buttons
-        if len(radiobutton_objects) == 1:
-            # radiobutton_objects = [radiobutton_objects]
-            groups = [radiobutton_objects]
-        if not groups:
-            groups = self.object_grouping_old(radiobutton_objects,
-                                              self.choiceset_condition)
-        for group in groups:
-            group = sorted(group, key=itemgetter("ymin"))
-            choice_set = {
-                "type": "Input.ChoiceSet",
-                "choices": [],
-                "style": "expanded"
-            }
-            alignment = []
-            for design_object in group:
-                choice_set["choices"].append({
-                    "title": design_object.get("data", ""),
-                    "value": "",
-                    "horizontalAlignment": design_object.get(
-                        "horizontal_alignment", "")
-                })
-                # self.card_arrange.append_objects(design_object,
-                #                                  choice_set["choices"])
-                alignment.append(design_object.get("horizontal_alignment",
-                                                   "Left"))
-            preference_order = ["Left", "Center", "Right"]
-            if len(alignment) == len(list(set(alignment))):
-                alignment.sort(key=(preference_order + alignment).index)
-                choice_set["horizontalAlignment"] = alignment[0]
-            else:
-                choice_set["horizontalAlignment"] = max(set(alignment),
-                                                        key=alignment.count)
-
-            body.append(choice_set)
-            if ymins is not None and len(group) > 0:
-                ymins.append(design_object.get("ymin"))

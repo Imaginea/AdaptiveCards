@@ -11,7 +11,7 @@ class DsHelper:
     Base class for layout ds utilities and template handling.
     - handles all utility functions needed for the layout generation
     """
-    CONTAINERS = ['columnset', 'column', 'imageset', 'choiceset']
+    CONTAINERS = ['columnset', 'imageset', 'column', 'choiceset']
     MERGING_CONTAINERS_LIST = ['imageset', 'choiceset']
 
     def __init__(self):
